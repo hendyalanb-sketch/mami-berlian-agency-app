@@ -1,7 +1,8 @@
-import { eq } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import { canvaTemplates } from "@/db/schema";
 import { getCanvaConnectionStatus } from "@/modules/canva/oauth-token-service";
+import { CANVA_WORKER_TEMPLATE_CODES } from "@/modules/canva/template-health";
 
 export async function getCanvaRuntimeState(userId?: string | null) {
   const configured = Boolean(
@@ -12,15 +13,38 @@ export async function getCanvaRuntimeState(userId?: string | null) {
     process.env.CANVA_REDIRECT_URI,
   );
   const connection = await getCanvaConnectionStatus(userId);
-  if (!db) return { configured, ...connection, templateActive: false, designId: process.env.CANVA_MB01_WORKING_DESIGN_ID ?? "", ready: false };
-  const [template] = await db.select({ isActive: canvaTemplates.isActive, canvaTemplateId: canvaTemplates.canvaTemplateId, version: canvaTemplates.version }).from(canvaTemplates).where(eq(canvaTemplates.code, "MB-01")).limit(1);
-  const designId = template?.canvaTemplateId ?? process.env.CANVA_MB01_WORKING_DESIGN_ID ?? "";
+  if (!db) {
+    return {
+      configured,
+      ...connection,
+      templateActive: false,
+      templateVersion: null,
+      designId: "",
+      templates: [],
+      ready: false,
+    };
+  }
+
+  const rows = await db.select({
+    code: canvaTemplates.code,
+    name: canvaTemplates.name,
+    isActive: canvaTemplates.isActive,
+    canvaTemplateId: canvaTemplates.canvaTemplateId,
+    version: canvaTemplates.version,
+  }).from(canvaTemplates).where(inArray(canvaTemplates.code, [...CANVA_WORKER_TEMPLATE_CODES]));
+
+  const templates = rows
+    .filter((row) => row.isActive && Boolean(row.canvaTemplateId))
+    .map((row) => ({ code: row.code, name: row.name, version: row.version, designId: row.canvaTemplateId }));
+  const first = templates[0];
+
   return {
     configured,
     ...connection,
-    templateActive: template?.isActive === true,
-    templateVersion: template?.version ?? null,
-    designId,
-    ready: configured && connection.connected && template?.isActive === true && Boolean(designId),
+    templateActive: templates.length > 0,
+    templateVersion: first?.version ?? null,
+    designId: first?.designId ?? "",
+    templates,
+    ready: configured && connection.connected && templates.length > 0,
   };
 }

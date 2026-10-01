@@ -9,7 +9,10 @@ export type SalaryRate = {
   effectiveTo?: string | null;
 };
 
-export function resolveSalaryRate(rates: SalaryRate[], input: { category: string; experience: string; zone: string; effectiveDate: string }) {
+export function resolveSalaryRate(
+  rates: SalaryRate[],
+  input: { category: string; experience: string; zone: string; effectiveDate: string },
+) {
   const at = new Date(input.effectiveDate).getTime();
   const matches = rates.filter((rate) => {
     const start = new Date(rate.effectiveFrom).getTime();

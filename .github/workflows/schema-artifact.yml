@@ -22,6 +22,9 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Generate Drizzle migration
         run: npm run db:generate
+        env:
+          # drizzle-kit generate only parses schema/config; this placeholder is never contacted.
+          DATABASE_URL: postgresql://migration_artifact:artifact_only@127.0.0.1:5432/mba_content_ops_artifact
       - name: Upload migration artifact
         uses: actions/upload-artifact@v4
         with:

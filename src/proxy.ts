@@ -5,6 +5,9 @@ import { isAdmin } from "@/lib/permissions";
 const ADMIN_PATHS = ["/master", "/integrasi", "/audit", "/pengaturan"];
 
 export async function proxy(request: NextRequest) {
+  // Galeri komponen /dev/* hanya untuk development lokal; halamannya sendiri juga 404 di production.
+  if (process.env.NODE_ENV !== "production" && request.nextUrl.pathname.startsWith("/dev/")) return NextResponse.next();
+
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
   if (!token) {
     const login = new URL("/login", request.url);

@@ -7,6 +7,7 @@ import { ContentBridgeService, type BridgeRecord } from "@/modules/bridge/conten
 import { readinessFromBridge } from "@/modules/enrichment/serialization";
 import { downloadDriveFile, uploadImageToDrive } from "@/modules/google/drive-rest";
 import { getGoogleAccessToken, GoogleConnectionError } from "@/modules/google/oauth-token-service";
+import { contentStatusAfterPhotoUpload } from "@/modules/photo/content-status";
 import { buildPhotoFilename, PHOTO_TYPES, validatePhotoInput, type PhotoType } from "@/modules/photo/validation";
 import { getGoogleStorageSettings } from "@/modules/settings/service";
 import { WorkerSourceService } from "@/modules/workers/source-service";
@@ -63,9 +64,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ reg
         : {};
     const merged: BridgeRecord = { ...(before ?? {}), ...patch, worker_register: worker.workerRegister };
     const readiness = readinessFromBridge(merged);
+    const contentStatus = contentStatusAfterPhotoUpload({ photoType, currentStatus: before?.content_status, readinessStatus: readiness.status });
 
-    await ctx.bridge.upsert({ worker_register: worker.workerRegister, ...patch, content_status: readiness.status, last_updated_by: session.user.email ?? session.user.id, last_updated_at: new Date().toISOString() });
-    await writeAudit({ workerRegister: worker.workerRegister, userId: session.user.id, action: "UPLOAD_WORKER_PHOTO", entityType: "DRIVE_FILE", entityId: uploaded.id, after: { photoType, fileName, contentStatus: readiness.status } });
+    await ctx.bridge.upsert({ worker_register: worker.workerRegister, ...patch, content_status: contentStatus, last_updated_by: session.user.email ?? session.user.id, last_updated_at: new Date().toISOString() });
+    await writeAudit({ workerRegister: worker.workerRegister, userId: session.user.id, action: "UPLOAD_WORKER_PHOTO", entityType: "DRIVE_FILE", entityId: uploaded.id, after: { photoType, fileName, contentStatus } });
 
     return NextResponse.json({ ok: true, file: uploaded, photoType, fileName, readiness });
   } catch (error) {

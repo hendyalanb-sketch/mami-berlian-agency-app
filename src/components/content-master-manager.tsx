@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, Pencil, Plus, Power, ShieldCheck } from "lucide-react";
+import { Alert, ErrorAlert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, Input } from "@/components/ui/input";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { ACTIVE_STATUS, TEMPLATE_STATUS } from "@/lib/status-labels";
 
 type Template = {
   id: string;
@@ -40,15 +44,25 @@ type Snapshot = {
 };
 
 const labelNames: Record<DisplayKey, string> = {
-  "display.ready_label": "Headline status",
+  "display.ready_label": "Label status siap",
   "display.placement_label": "Label penempatan",
   "display.salary_label": "Label rate/gaji",
   "display.footer_text": "Footer publik",
 };
 
-const emptyTemplate = { code: "MB-01", name: "Pekerja Ready", canvaTemplateId: "", version: "v1", contentType: "PEKERJA_READY" };
+const emptyTemplate = { code: "", name: "", canvaTemplateId: "", version: "v1", contentType: "PEKERJA_READY" };
 const emptyChannel = { code: "", name: "" };
-const emptyCta = { id: "", name: "", primaryPhone: "", secondaryPhone: "", email: "", website: "", ctaText: "", qrTarget: "", isDefault: false };
+const emptyCta = {
+  id: "",
+  name: "",
+  primaryPhone: "",
+  secondaryPhone: "",
+  email: "",
+  website: "",
+  ctaText: "",
+  qrTarget: "",
+  isDefault: false,
+};
 
 export function ContentMasterManager({ enabled }: { enabled: boolean }) {
   const [data, setData] = useState<Snapshot | null>(null);
@@ -106,65 +120,340 @@ export function ContentMasterManager({ enabled }: { enabled: boolean }) {
     }
   }
 
-  if (!enabled) return null;
-  if (loading) return <div className="flex min-h-32 items-center justify-center"><Loader2 className="animate-spin text-slate-400" /></div>;
-  if (!data || !labels) return <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">Master konten belum dapat dibaca: {error}</p>;
+  if (!enabled)
+    return (
+      <Alert tone="warning" title="Master Konten belum aktif.">
+        Neon harus terhubung dan migration + seed sudah dijalankan.
+      </Alert>
+    );
+  if (loading)
+    return (
+      <div className="flex min-h-32 items-center justify-center" role="status" aria-label="Memuat Master Konten">
+        <Loader2 className="animate-spin text-slate-400" aria-hidden />
+      </div>
+    );
+  if (!data || !labels) return <ErrorAlert code={error} />;
 
-  return <div className="space-y-5 border-t border-slate-200 pt-6">
-    <header>
-      <p className="text-xs font-black uppercase tracking-[.18em] text-[#E7508B]">Master Konten & Publikasi</p>
-      <h3 className="mt-1 text-xl font-black text-[#0B1F3A]">Kontrol tampilan dan distribusi konten</h3>
-      <p className="mt-1 text-sm text-slate-500">Template Canva tidak dapat diaktifkan manual. Perubahan metadata selalu mengunci template sampai health check Canva berhasil.</p>
-    </header>
+  const confirmToggle = (isActive: boolean, label: string) =>
+    !isActive ||
+    window.confirm(
+      `Nonaktifkan “${label}”? Pilihan ini tidak akan muncul lagi untuk staf. Data lama tetap tersimpan dan bisa diaktifkan kembali.`,
+    );
+  const toggleClass = (isActive: boolean) =>
+    `inline-flex min-h-10 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold ${isActive ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50" : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"}`;
 
-    {error && <p className="rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p>}
-
-    <Card>
-      <CardHeader><CardTitle>Template Canva</CardTitle></CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-          <input value={template.code} onChange={(e)=>setTemplate({...template,code:e.target.value})} placeholder="Kode" className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm" />
-          <input value={template.name} onChange={(e)=>setTemplate({...template,name:e.target.value})} placeholder="Nama template" className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm" />
-          <input value={template.canvaTemplateId} onChange={(e)=>setTemplate({...template,canvaTemplateId:e.target.value})} placeholder="Canva design ID" className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm" />
-          <input value={template.version} onChange={(e)=>setTemplate({...template,version:e.target.value})} placeholder="Versi" className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm" />
-          <input value={template.contentType} onChange={(e)=>setTemplate({...template,contentType:e.target.value})} placeholder="Content type" className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm" />
+  return (
+    <div className="space-y-4">
+      {error && (
+        <div className="sticky top-2 z-10">
+          <ErrorAlert code={error} />
         </div>
-        <Button disabled={busy||!template.code||!template.name||!template.canvaTemplateId||!template.version||!template.contentType} onClick={()=>mutate("POST",{resource:"template",...template})} className="gap-2"><ShieldCheck size={16}/>Simpan & Wajibkan Health Check</Button>
-        <div className="grid gap-2 lg:grid-cols-2">{data.templates.map((item)=><div key={item.id} className="rounded-xl border border-slate-100 p-3"><div className="flex flex-wrap items-center justify-between gap-2"><div><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-bold">{item.name}</p><Badge>{item.code}</Badge><Badge className={item.isActive?"border-emerald-100 bg-emerald-50 text-emerald-700":"border-amber-100 bg-amber-50 text-amber-700"}>{item.isActive?"Health OK":"Terkunci"}</Badge></div><p className="mt-1 text-xs text-slate-500">{item.canvaTemplateId} • {item.version} • {item.contentType}</p><p className="mt-1 text-xs text-slate-400">{item.requiredFieldsJson.length} field autofill wajib</p></div><button onClick={()=>setTemplate({code:item.code,name:item.name,canvaTemplateId:item.canvaTemplateId,version:item.version,contentType:item.contentType})} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-slate-50 px-3 text-xs font-bold text-slate-700"><Pencil size={14}/>Edit</button></div></div>)}</div>
-      </CardContent>
-    </Card>
+      )}
 
-    <div className="grid gap-4 xl:grid-cols-2">
       <Card>
-        <CardHeader><CardTitle>Channel Publikasi</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Template Canva</CardTitle>
+          <p className="mt-1 text-xs text-slate-500">
+            Template tidak bisa diaktifkan manual. Setiap perubahan mengunci template sampai health check Canva di menu Integrasi berhasil.
+          </p>
+        </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]"><input value={channel.code} onChange={(e)=>setChannel({...channel,code:e.target.value})} placeholder="Kode, mis. TIKTOK" className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm"/><input value={channel.name} onChange={(e)=>setChannel({...channel,name:e.target.value})} placeholder="Nama tampil" className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm"/><Button disabled={busy||!channel.code||!channel.name} onClick={async()=>{if(await mutate("POST",{resource:"channel",...channel}))setChannel(emptyChannel);}}><Plus size={16}/></Button></div>
-          <div className="space-y-2">{data.channels.map((item)=><div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 p-3"><div><p className="text-sm font-semibold">{item.name}</p><p className="text-xs text-slate-400">{item.code}</p></div><button disabled={busy} onClick={()=>mutate("PATCH",{resource:"channel",id:item.id,isActive:!item.isActive})} className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-xs font-bold ${item.isActive?"bg-emerald-50 text-emerald-700":"bg-slate-100 text-slate-500"}`}><Power size={14}/>{item.isActive?"Aktif":"Nonaktif"}</button></div>)}</div>
+          <div className="grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-2 xl:grid-cols-5">
+            <Field label="Kode">
+              <Input
+                value={template.code}
+                onChange={(e) => setTemplate({ ...template, code: e.target.value.toUpperCase() })}
+                placeholder="MB-01A"
+              />
+            </Field>
+            <Field label="Nama template">
+              <Input
+                value={template.name}
+                onChange={(e) => setTemplate({ ...template, name: e.target.value })}
+                placeholder="MB-01A — Personal"
+              />
+            </Field>
+            <Field label="Canva design ID">
+              <Input
+                value={template.canvaTemplateId}
+                onChange={(e) => setTemplate({ ...template, canvaTemplateId: e.target.value.trim() })}
+                placeholder="DAH..."
+              />
+            </Field>
+            <Field label="Versi">
+              <Input value={template.version} onChange={(e) => setTemplate({ ...template, version: e.target.value })} placeholder="v1" />
+            </Field>
+            <Field label="Jenis konten">
+              <Input
+                value={template.contentType}
+                onChange={(e) => setTemplate({ ...template, contentType: e.target.value.toUpperCase() })}
+                placeholder="PEKERJA_READY"
+              />
+            </Field>
+          </div>
+          <Button
+            disabled={busy || !template.code || !template.name || !template.canvaTemplateId || !template.version || !template.contentType}
+            onClick={() => mutate("POST", { resource: "template", ...template })}
+            className="gap-2"
+          >
+            <ShieldCheck size={16} aria-hidden />
+            Simpan (wajib health check ulang)
+          </Button>
+          <ul className="grid gap-2 lg:grid-cols-2">
+            {data.templates.map((item) => (
+              <li key={item.id} className="rounded-xl border border-slate-100 p-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-bold">{item.name}</p>
+                      <Badge>{item.code}</Badge>
+                      <StatusBadge status={TEMPLATE_STATUS[String(item.isActive) as "true" | "false"]} />
+                    </div>
+                    <p className="mt-1 break-all text-xs text-slate-500">
+                      {item.canvaTemplateId} • {item.version} • {item.contentType}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">{item.requiredFieldsJson.length} field Autofill wajib</p>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    className="min-h-10 gap-1.5 px-3 text-xs"
+                    onClick={() =>
+                      setTemplate({
+                        code: item.code,
+                        name: item.name,
+                        canvaTemplateId: item.canvaTemplateId,
+                        version: item.version,
+                        contentType: item.contentType,
+                      })
+                    }
+                  >
+                    <Pencil size={14} aria-hidden />
+                    Edit
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
         </CardContent>
       </Card>
 
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Channel Publikasi</CardTitle>
+            <p className="mt-1 text-xs text-slate-500">Pilihan channel saat staf menandai konten sudah dipublikasi.</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+              <Field label="Kode">
+                <Input
+                  value={channel.code}
+                  onChange={(e) => setChannel({ ...channel, code: e.target.value.toUpperCase() })}
+                  placeholder="TIKTOK"
+                />
+              </Field>
+              <Field label="Nama tampil">
+                <Input value={channel.name} onChange={(e) => setChannel({ ...channel, name: e.target.value })} placeholder="TikTok" />
+              </Field>
+              <Button
+                disabled={busy || !channel.code || !channel.name}
+                onClick={async () => {
+                  if (await mutate("POST", { resource: "channel", ...channel })) setChannel(emptyChannel);
+                }}
+                className="gap-1.5"
+              >
+                <Plus size={16} aria-hidden />
+                Tambah
+              </Button>
+            </div>
+            <ul className="space-y-2">
+              {data.channels.map((item) => (
+                <li key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 p-3">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-semibold">{item.name}</p>
+                      <StatusBadge status={ACTIVE_STATUS[String(item.isActive) as "true" | "false"]} />
+                    </div>
+                    <p className="text-xs text-slate-400">{item.code}</p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      if (confirmToggle(item.isActive, item.name))
+                        mutate("PATCH", { resource: "channel", id: item.id, isActive: !item.isActive });
+                    }}
+                    className={toggleClass(item.isActive)}
+                  >
+                    <Power size={14} aria-hidden />
+                    {item.isActive ? "Nonaktifkan" : "Aktifkan"}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Label Tampilan Publik</CardTitle>
+            <p className="mt-1 text-xs text-slate-500">Teks yang muncul di Preview Publik.</p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {(Object.keys(labelNames) as DisplayKey[]).map((key) => (
+              <div key={key} className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
+                <Field label={labelNames[key]}>
+                  <Input value={labels[key]} onChange={(e) => setLabels({ ...labels, [key]: e.target.value })} />
+                </Field>
+                <Button
+                  variant="secondary"
+                  disabled={busy || !labels[key].trim() || labels[key] === data.displayLabels[key]}
+                  onClick={() => mutate("POST", { resource: "display", key, value: labels[key] })}
+                >
+                  Simpan
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
-        <CardHeader><CardTitle>Label / Display Text</CardTitle></CardHeader>
-        <CardContent className="space-y-3">{(Object.keys(labelNames) as DisplayKey[]).map((key)=><div key={key}><label className="mb-1 block text-xs font-bold text-slate-500">{labelNames[key]}</label><div className="grid gap-2 sm:grid-cols-[1fr_auto]"><input value={labels[key]} onChange={(e)=>setLabels({...labels,[key]:e.target.value})} className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm"/><Button variant="secondary" disabled={busy||!labels[key].trim()} onClick={()=>mutate("POST",{resource:"display",key,value:labels[key]})}>Simpan</Button></div></div>)}</CardContent>
+        <CardHeader>
+          <CardTitle>CTA & Kontak</CardTitle>
+          <p className="mt-1 text-xs text-slate-500">CTA default dipakai sebagai teks ajakan di desain Canva.</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Field label="Nama profil CTA">
+              <Input value={cta.name} onChange={(e) => setCta({ ...cta, name: e.target.value })} placeholder="CTA Utama" />
+            </Field>
+            <Field label="WhatsApp utama">
+              <Input
+                type="tel"
+                inputMode="tel"
+                value={cta.primaryPhone}
+                onChange={(e) => setCta({ ...cta, primaryPhone: e.target.value })}
+                placeholder="0812..."
+              />
+            </Field>
+            <Field label="Nomor kedua">
+              <Input
+                type="tel"
+                inputMode="tel"
+                value={cta.secondaryPhone}
+                onChange={(e) => setCta({ ...cta, secondaryPhone: e.target.value })}
+                placeholder="Opsional"
+              />
+            </Field>
+            <Field label="Email">
+              <Input type="email" value={cta.email} onChange={(e) => setCta({ ...cta, email: e.target.value })} placeholder="Opsional" />
+            </Field>
+            <Field label="Website">
+              <Input
+                type="url"
+                inputMode="url"
+                value={cta.website}
+                onChange={(e) => setCta({ ...cta, website: e.target.value })}
+                placeholder="https://..."
+              />
+            </Field>
+            <Field label="Tautan QR">
+              <Input
+                type="url"
+                inputMode="url"
+                value={cta.qrTarget}
+                onChange={(e) => setCta({ ...cta, qrTarget: e.target.value })}
+                placeholder="https://..."
+              />
+            </Field>
+            <Field label="Teks CTA" className="xl:col-span-2">
+              <Input
+                value={cta.ctaText}
+                onChange={(e) => setCta({ ...cta, ctaText: e.target.value })}
+                placeholder="Hubungi kami untuk interview"
+              />
+            </Field>
+          </div>
+          <label className="flex min-h-11 items-center gap-3 rounded-xl bg-slate-50 px-3 text-sm font-semibold">
+            <input
+              type="checkbox"
+              className="h-5 w-5 accent-brand-navy"
+              checked={cta.isDefault}
+              onChange={(e) => setCta({ ...cta, isDefault: e.target.checked })}
+            />
+            Jadikan CTA default
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              disabled={busy || !cta.name}
+              onClick={async () => {
+                if (await mutate("POST", { resource: "cta", ...cta, id: cta.id || undefined })) setCta(emptyCta);
+              }}
+            >
+              {cta.id ? "Perbarui CTA" : "Tambah CTA"}
+            </Button>
+            {cta.id && (
+              <Button variant="secondary" onClick={() => setCta(emptyCta)}>
+                Batal Edit
+              </Button>
+            )}
+          </div>
+          <ul className="grid gap-3 lg:grid-cols-2">
+            {data.ctas.map((item) => (
+              <li key={item.id} className="rounded-xl border border-slate-100 p-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-bold">{item.name}</p>
+                      {item.isDefault && <Badge className="border-pink-100 bg-pink-50 text-brand-pink-dark">Default</Badge>}
+                      <StatusBadge status={ACTIVE_STATUS[String(item.isActive) as "true" | "false"]} />
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {item.primaryPhone || "—"} • {item.email || "—"}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-400">{item.ctaText || "Belum ada teks CTA"}</p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <Button
+                      variant="secondary"
+                      className="min-h-10 gap-1.5 px-3 text-xs"
+                      onClick={() =>
+                        setCta({
+                          id: item.id,
+                          name: item.name,
+                          primaryPhone: item.primaryPhone ?? "",
+                          secondaryPhone: item.secondaryPhone ?? "",
+                          email: item.email ?? "",
+                          website: item.website ?? "",
+                          ctaText: item.ctaText ?? "",
+                          qrTarget: item.qrTarget ?? "",
+                          isDefault: item.isDefault,
+                        })
+                      }
+                    >
+                      <Pencil size={14} aria-hidden />
+                      Edit
+                    </Button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        if (confirmToggle(item.isActive, item.name))
+                          mutate("PATCH", { resource: "cta", id: item.id, isActive: !item.isActive });
+                      }}
+                      className={toggleClass(item.isActive)}
+                    >
+                      <Power size={14} aria-hidden />
+                      {item.isActive ? "Nonaktifkan" : "Aktifkan"}
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
       </Card>
     </div>
-
-    <Card>
-      <CardHeader><CardTitle>CTA & Kontak</CardTitle></CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <input value={cta.name} onChange={(e)=>setCta({...cta,name:e.target.value})} placeholder="Nama profil CTA" className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm"/>
-          <input value={cta.primaryPhone} onChange={(e)=>setCta({...cta,primaryPhone:e.target.value})} placeholder="WhatsApp utama" className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm"/>
-          <input value={cta.secondaryPhone} onChange={(e)=>setCta({...cta,secondaryPhone:e.target.value})} placeholder="Nomor kedua" className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm"/>
-          <input value={cta.email} onChange={(e)=>setCta({...cta,email:e.target.value})} placeholder="Email" className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm"/>
-          <input value={cta.website} onChange={(e)=>setCta({...cta,website:e.target.value})} placeholder="https://..." className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm"/>
-          <input value={cta.qrTarget} onChange={(e)=>setCta({...cta,qrTarget:e.target.value})} placeholder="QR target URL" className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm"/>
-          <input value={cta.ctaText} onChange={(e)=>setCta({...cta,ctaText:e.target.value})} placeholder="Teks CTA" className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm xl:col-span-2"/>
-        </div>
-        <label className="flex min-h-11 items-center gap-3 rounded-xl bg-slate-50 px-3 text-sm font-semibold"><input type="checkbox" checked={cta.isDefault} onChange={(e)=>setCta({...cta,isDefault:e.target.checked})}/>Jadikan CTA default</label>
-        <div className="flex flex-wrap gap-2"><Button disabled={busy||!cta.name} onClick={async()=>{if(await mutate("POST",{resource:"cta",...cta,id:cta.id||undefined}))setCta(emptyCta);}}>{cta.id?"Perbarui CTA":"Tambah CTA"}</Button>{cta.id&&<Button variant="secondary" onClick={()=>setCta(emptyCta)}>Batal Edit</Button>}</div>
-        <div className="grid gap-3 lg:grid-cols-2">{data.ctas.map((item)=><div key={item.id} className="rounded-xl border border-slate-100 p-3"><div className="flex items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-bold">{item.name}</p>{item.isDefault&&<Badge>Default</Badge>}</div><p className="mt-1 text-xs text-slate-500">{item.primaryPhone||"—"} • {item.email||"—"}</p><p className="mt-1 text-xs leading-5 text-slate-400">{item.ctaText||"Belum ada teks CTA"}</p></div><div className="flex gap-1"><button onClick={()=>setCta({id:item.id,name:item.name,primaryPhone:item.primaryPhone??"",secondaryPhone:item.secondaryPhone??"",email:item.email??"",website:item.website??"",ctaText:item.ctaText??"",qrTarget:item.qrTarget??"",isDefault:item.isDefault})} className="inline-flex min-h-10 items-center rounded-xl bg-slate-50 px-3 text-slate-700"><Pencil size={14}/></button><button disabled={busy} onClick={()=>mutate("PATCH",{resource:"cta",id:item.id,isActive:!item.isActive})} className={`inline-flex min-h-10 items-center rounded-xl px-3 ${item.isActive?"bg-emerald-50 text-emerald-700":"bg-slate-100 text-slate-500"}`}><Power size={14}/></button></div></div></div>)}</div>
-      </CardContent>
-    </Card>
-  </div>;
+  );
 }

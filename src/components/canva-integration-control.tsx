@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, ExternalLink, RefreshCw, TriangleAlert } from "lucide-react";
+import { ExternalLink, RefreshCw } from "lucide-react";
+import { Alert, ErrorAlert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type Template = { code: string; name: string; version: string; designId: string };
 type HealthTemplate = { code: string; name: string; designId: string; valid: boolean; missing: string[]; wrongType: string[]; active: boolean };
@@ -17,8 +19,7 @@ export function CanvaIntegrationControl({ configured, connected, templates }: { 
     setHealth(null);
     try {
       const response = await fetch("/api/integrations/canva/health", { method: "POST", cache: "no-store" });
-      const body = await response.json();
-      setHealth(body);
+      setHealth(await response.json());
     } catch {
       setHealth({ error: "CANVA_HEALTH_FAILED" });
     } finally {
@@ -26,18 +27,24 @@ export function CanvaIntegrationControl({ configured, connected, templates }: { 
     }
   }
 
-  return <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div><p className="font-bold text-[#0B1F3A]">Canva OAuth & Worker Templates</p><p className="mt-1 text-xs text-slate-500">MB-01A Personal + MB-01B Promo</p></div>
-      <div className="flex gap-2">{configured && !connected && <a href="/api/integrations/canva/connect" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#0B1F3A] px-3 text-xs font-bold text-white"><ExternalLink size={15}/>Hubungkan Canva</a>}{connected && <Button onClick={validate} disabled={busy} className="gap-2"><RefreshCw size={15} className={busy ? "animate-spin" : ""}/>{busy ? "Memeriksa…" : "Validasi Template"}</Button>}</div>
+  return <div className="space-y-3">
+    <div className="flex flex-wrap gap-2">
+      {configured && <a href="/api/integrations/canva/connect" className={cn("inline-flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold", connected ? "border border-slate-200 bg-white text-slate-800 hover:bg-slate-50" : "bg-brand-navy text-white hover:bg-brand-navy-hover")}><ExternalLink size={15} aria-hidden />{connected ? "Hubungkan ulang Canva" : "Hubungkan Canva"}</a>}
+      {connected && <Button onClick={validate} disabled={busy} className="gap-2"><RefreshCw size={15} className={busy ? "animate-spin" : ""} aria-hidden />{busy ? "Memeriksa…" : "Periksa Template"}</Button>}
     </div>
 
-    {templates.length > 0 && <div className="grid gap-2 sm:grid-cols-2">{templates.map((template) => <div key={template.code} className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-black text-[#0B1F3A]">{template.code}</p><p className="mt-1 text-xs text-slate-600">{template.name} • {template.version}</p><p className="mt-1 break-all text-[11px] text-slate-400">{template.designId}</p></div>)}</div>}
-    {!configured && <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-800">Isi CANVA_CLIENT_ID, CANVA_CLIENT_SECRET, CANVA_REDIRECT_URI, dan ENCRYPTION_KEY terlebih dahulu.</p>}
-    {configured && connected && !health && <p className="text-xs text-emerald-700">Akun Canva user sudah tersambung. Validasi template untuk memastikan dataset autofill masih lengkap.</p>}
-    {health?.valid && <p className="flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-xs font-semibold text-emerald-800"><CheckCircle2 size={16}/>Semua worker template yang terdaftar lolos dataset health check.</p>}
-    {health?.templates && <div className="space-y-2">{health.templates.map((template) => <div key={template.code} className={`rounded-xl border p-3 text-xs ${template.valid ? "border-emerald-100 bg-emerald-50 text-emerald-800" : "border-amber-100 bg-amber-50 text-amber-800"}`}><p className="font-bold">{template.code} — {template.valid ? "Healthy" : "Perlu perbaikan"}</p>{!template.valid && <p className="mt-1">Missing: {template.missing.join(", ") || "—"} • Wrong type: {template.wrongType.join(", ") || "—"}</p>}</div>)}</div>}
-    {health && health.valid === false && !health.templates?.length && <p className="flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-xs text-amber-800"><TriangleAlert size={16} className="mt-0.5 shrink-0"/><span>Template belum sehat. Field: {health.missing?.join(", ") || "tidak diketahui"}.</span></p>}
-    {health?.error && <p className="rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-700">{health.error}</p>}
+    {!configured && <Alert tone="warning" title="Kredensial Canva belum lengkap.">Isi CANVA_CLIENT_ID, CANVA_CLIENT_SECRET, CANVA_REDIRECT_URI, dan ENCRYPTION_KEY di environment Vercel.</Alert>}
+    {configured && !connected && <p className="text-xs text-slate-500">Setiap user yang akan Generate perlu menghubungkan akun Canva-nya sendiri.</p>}
+    {connected && !health && <p className="text-xs text-slate-500">Akun Canva Anda sudah terhubung. Periksa template untuk memastikan field Autofill masih lengkap; template yang lolos otomatis diaktifkan.</p>}
+
+    {templates.length > 0 && !health?.templates && <ul className="grid gap-2 sm:grid-cols-2">{templates.map((template) => <li key={template.code} className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-xs text-emerald-800"><p className="font-bold">{template.name} — aktif</p><p className="mt-1">Versi {template.version}</p><p className="mt-1 break-all text-emerald-700/70">{template.designId}</p></li>)}</ul>}
+    {health?.valid && <Alert tone="success" title="Semua template lolos pemeriksaan dan siap dipakai." />}
+    {health?.templates && <ul className="grid gap-2 sm:grid-cols-2">{health.templates.map((template) => <li key={template.code} className={cn("rounded-xl border p-3 text-xs", template.valid ? "border-emerald-100 bg-emerald-50 text-emerald-800" : "border-amber-100 bg-amber-50 text-amber-800")}>
+      <p className="font-bold">{template.name || template.code} — {template.valid ? "siap dipakai" : "perlu diperbaiki di Canva"}</p>
+      {template.missing.length > 0 && <p className="mt-1 leading-5">Field belum ada: {template.missing.join(", ")}</p>}
+      {template.wrongType.length > 0 && <p className="mt-1 leading-5">Tipe field salah: {template.wrongType.join(", ")}</p>}
+    </li>)}</ul>}
+    {health && health.valid === false && !health.templates?.length && <Alert tone="warning" title="Template belum lolos pemeriksaan.">Field belum ada: {health.missing?.join(", ") || "tidak diketahui"}.</Alert>}
+    <ErrorAlert code={health?.error} />
   </div>;
 }

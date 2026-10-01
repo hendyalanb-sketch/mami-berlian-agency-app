@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "ghost" };
 export function Button({ className, variant = "primary", ...props }: Props) {
   const variants = {
-    primary: "bg-[#0B1F3A] text-white hover:bg-[#12345C]",
+    primary: "bg-brand-navy text-white hover:bg-brand-navy-hover",
     secondary: "border border-slate-200 bg-white text-slate-800 hover:bg-slate-50",
     ghost: "text-slate-700 hover:bg-slate-100",
   };

@@ -88,11 +88,21 @@ The application flow is implemented in the isolated branch and validated by CI. 
 - MB-01 source/reference verified at 1080×1350.
 - Existing MB-01 design still has no complete Autofill dataset; generation must remain locked until health passes.
 
+## Infrastructure state (verified 2026-10-01 via Neon + Vercel connectors)
+
+- **Neon:** project `mami-berlian-content-ops-db` (`empty-tree-42677156`, aws-ap-southeast-1, PG 18).
+  - Branch `production` (`br-solitary-salad-azl3jo27`): empty, no tables.
+  - Branch `staging` (`br-muddy-math-aztg4tvi`): schema matches `drizzle/0000_mature_moira_mactaggert.sql` exactly (16 tables, all columns); seeded (7 categories, 13 skills, 5 experiences, 3 zones, 11 placements, 15 rates, 6 channels, 1 CTA, 3 settings); templates MB-01 (legacy), MB-01A, MB-01B active; 1 ADMIN user.
+  - Schema had been applied without Drizzle tracking; migration `0000` is now recorded in `drizzle.__drizzle_migrations` on **staging only**, so `npm run db:migrate` will not try to recreate tables.
+- **Vercel:** project `mami-berlian-content-ops` (`prj_FyXNhV1te30NgPRLQhSd7U1lwOMA`), linked to GitHub. `content-ops-v3` deploys to Production; other branches get Preview deploys.
+  - All environment variables are scoped to **Production only**. Preview deployments have no env vars, so they run in "not configured" mode.
+  - Production `DATABASE_URL` cannot be read (sensitive), but the staging branch shows an ADMIN login while the production branch is empty, so Production most likely points at the Neon **staging** branch. Confirm and decide before go-live (AGENTS.md rule 15).
+
 ## Remaining provisioning / release blockers
 
-1. **Neon target is not selected.** The connected Neon account is unscoped and requires an explicit `project_id`; no staging migration/seed has been applied through the connector.
-2. **Dedicated Vercel Content Operations project does not exist.** The connected team currently contains eight other projects; none is a dedicated Content Ops project. Existing Mami Berlian/RS projects must not be reused silently.
-3. **Runtime environment variables are not provisioned** on a dedicated Preview/Staging/Production Vercel target.
+1. ~~Neon target not selected~~ — resolved (see Infrastructure state).
+2. ~~Dedicated Vercel project missing~~ — resolved (`mami-berlian-content-ops`).
+3. **Preview environment variables are missing**, and Production vs staging database isolation needs confirming (see Infrastructure state).
 4. **Google OAuth production callback/client credentials** still need provisioning in the final deployment environment.
 5. **Canva OAuth client/callback credentials** still need provisioning in the final deployment environment.
 6. **MB-01 Autofill fields must be created/verified non-destructively in Canva** and then activated through the app health check.

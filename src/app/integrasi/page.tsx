@@ -1,36 +1,59 @@
 import { getServerSession } from "next-auth";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Check } from "lucide-react";
 import { CanvaIntegrationControl } from "@/components/canva-integration-control";
 import { GoogleIntegrationControl } from "@/components/google-integration-control";
+import { Alert } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/card";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { authOptions } from "@/lib/auth";
+import { cn } from "@/lib/utils";
 import { getCanvaRuntimeState } from "@/modules/canva/runtime-state";
 import { getRuntimeCapabilities } from "@/modules/integrations/capabilities";
 
 export const metadata = { title: "Integrasi" };
 export const dynamic = "force-dynamic";
 
-type IntegrationRow = { name: string; detail: string; configured: boolean; reason?: string };
+type Step = { key: string; title: string; detail: string; ready: boolean; reason?: string; control?: React.ReactNode };
 
-export default async function IntegrationsPage() {
+export default async function IntegrationsPage({ searchParams }: { searchParams: Promise<{ canva?: string }> }) {
+  const params = await searchParams;
   const capabilities = getRuntimeCapabilities();
   const session = await getServerSession(authOptions);
   const canva = await getCanvaRuntimeState(session?.user.id);
   const googleConfigured = capabilities.registerRead.configured && capabilities.bridgeWrite.configured && capabilities.photoDrive.configured;
-  const rows: IntegrationRow[] = [
-    { name: "Google Sheets", detail: "Register read-only + MBA - CONTENT BRIDGE", configured: capabilities.registerRead.configured && capabilities.bridgeWrite.configured, reason: capabilities.bridgeWrite.reason ?? capabilities.registerRead.reason },
-    { name: "Google Drive", detail: "Folder foto pekerja dan arsip export", configured: capabilities.photoDrive.configured, reason: capabilities.photoDrive.reason },
-    { name: "Canva", detail: "OAuth user + MB-01A Personal + MB-01B Promo", configured: canva.ready, reason: !canva.configured ? "Credential Canva belum lengkap." : !canva.connected ? "Akun Canva user belum dihubungkan." : !canva.templateActive ? "Belum ada worker template aktif yang lolos dataset health." : undefined },
-    { name: "Neon", detail: "Technical DB, Master Data, audit, generation job", configured: capabilities.database.configured, reason: capabilities.database.reason },
-    { name: "Vercel", detail: "Next.js hosting, Preview, Staging, Production", configured: process.env.VERCEL === "1", reason: process.env.VERCEL === "1" ? undefined : "Project Vercel Content Ops belum terhubung." },
+
+  const steps: Step[] = [
+    { key: "neon", title: "Database Neon", detail: "Master Data, user, audit, dan riwayat generate.", ready: capabilities.database.configured, reason: capabilities.database.reason ?? "DATABASE_URL belum diisi." },
+    { key: "google", title: "Google Sheets & Drive", detail: "Register (read-only), Content Bridge, folder foto, dan folder export.", ready: googleConfigured, reason: capabilities.bridgeWrite.reason ?? capabilities.registerRead.reason ?? capabilities.photoDrive.reason, control: <GoogleIntegrationControl configured={googleConfigured} /> },
+    { key: "canva", title: "Canva & Template", detail: "Akun Canva Anda + template MB-01A Personal dan MB-01B Promo.", ready: canva.ready, reason: !canva.configured ? "Kredensial Canva belum lengkap." : !canva.connected ? "Akun Canva Anda belum dihubungkan." : !canva.templateActive ? "Belum ada template yang lolos pemeriksaan." : undefined, control: <CanvaIntegrationControl configured={canva.configured} connected={canva.connected} templates={canva.templates} /> },
   ];
-  const readyCount = rows.filter((row) => row.configured).length;
+  const readyCount = steps.filter((step) => step.ready).length;
+  const firstPending = steps.find((step) => !step.ready)?.key;
 
   return <div className="space-y-5">
-    <header><h2 className="text-2xl font-bold text-[#0B1F3A]">Integrasi</h2><p className="mt-1 text-sm text-slate-500">Status berasal dari konfigurasi dan koneksi runtime nyata.</p></header>
-    <Card><CardContent className="flex items-center justify-between p-4"><div><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Runtime readiness</p><p className="mt-1 text-xl font-black text-[#0B1F3A]">{readyCount}/{rows.length} siap</p></div><Badge className={readyCount===rows.length?"border-emerald-100 bg-emerald-50 text-emerald-700":"border-amber-100 bg-amber-50 text-amber-700"}>{readyCount===rows.length?"Ready":"Setup"}</Badge></CardContent></Card>
-    <GoogleIntegrationControl configured={googleConfigured}/>
-    <CanvaIntegrationControl configured={canva.configured} connected={canva.connected} templates={canva.templates}/>
-    <div className="grid gap-3">{rows.map((row)=><Card key={row.name}><CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2"><p className="font-semibold">{row.name}</p><Badge className={row.configured?"border-emerald-100 bg-emerald-50 text-emerald-700":"border-slate-200 bg-slate-50 text-slate-600"}>{row.configured?"Configured":"Not configured"}</Badge></div><p className="mt-1 text-xs text-slate-500">{row.detail}</p></div><p className={`text-xs font-medium ${row.configured?"text-emerald-700":"text-amber-700"}`}>{row.configured?"Konfigurasi tersedia; gunakan health check untuk verifikasi akses nyata.":row.reason}</p></CardContent></Card>)}</div>
+    <header><h1 className="text-2xl font-bold text-brand-navy">Integrasi</h1><p className="mt-1 text-sm text-slate-500">Selesaikan langkah berurutan dari atas. Status dibaca dari konfigurasi dan koneksi nyata.</p></header>
+
+    {params.canva === "connected" && <Alert tone="success" title="Canva berhasil terhubung.">Lanjutkan dengan “Periksa Template” untuk mengaktifkan template.</Alert>}
+
+    <Card><CardContent className="flex items-center justify-between gap-3 p-4">
+      <div><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Kesiapan aplikasi</p><p className="mt-1 text-xl font-black text-brand-navy">{readyCount}/{steps.length} siap</p></div>
+      <StatusBadge status={readyCount === steps.length ? { label: "Siap dipakai", tone: "success" } : { label: "Perlu setup", tone: "warning" }} />
+    </CardContent></Card>
+
+    <ol className="space-y-3">
+      {steps.map((step, index) => <li key={step.key}><Card className={cn(step.key === firstPending && "ring-2 ring-brand-navy/15")}><CardContent className="space-y-3 p-4">
+        <div className="flex items-start gap-3">
+          <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold", step.ready ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600")} aria-hidden>{step.ready ? <Check size={16} /> : index + 1}</span>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2"><h2 className="font-bold text-brand-navy">{step.title}</h2><StatusBadge status={step.ready ? { label: "Siap", tone: "success" } : { label: "Belum siap", tone: "warning" }} /></div>
+            <p className="mt-1 text-xs text-slate-500">{step.detail}</p>
+            {!step.ready && step.reason && <p className="mt-1 text-xs font-semibold text-amber-700">{step.reason}</p>}
+          </div>
+        </div>
+        {step.control && <div className="sm:pl-11">{step.control}</div>}
+      </CardContent></Card></li>)}
+    </ol>
+
+    <p className="text-xs text-slate-500">Hosting: {process.env.VERCEL === "1" ? "berjalan di Vercel." : "belum berjalan di project Vercel Content Ops (mode lokal/dev)."}</p>
   </div>;
 }

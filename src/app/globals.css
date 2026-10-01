@@ -1,17 +1,27 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-navy: #0b1f3a;
+  --color-brand-navy-hover: #12345c;
+  --color-brand-pink: #e7508b;
+  --color-brand-pink-dark: #b8326a;
+  --color-brand-coral: #ef6a63;
+  --color-brand-blue: #d9efff;
+  --color-brand-sky: #eef4fb;
+  --color-brand-orange: #f7a13b;
+  --color-app-bg: #f7f9fc;
+}
+
 :root {
-  --brand-navy: #0b1f3a;
-  --brand-pink: #e7508b;
-  --brand-coral: #ef6a63;
-  --brand-blue: #d9efff;
-  --brand-orange: #f7a13b;
-  --background: #f7f9fc;
+  --background: var(--color-app-bg);
   --foreground: #0f172a;
 }
 
-* { box-sizing: border-box; }
-html { background: var(--background); }
-body { margin: 0; background: var(--background); color: var(--foreground); }
-button, input, select, textarea { font: inherit; }
-:focus-visible { outline: 3px solid rgba(11,31,58,.25); outline-offset: 2px; }
+/* Di dalam @layer base agar utility Tailwind (mis. text-xs pada tombol) tetap menang. */
+@layer base {
+  * { box-sizing: border-box; }
+  html { background: var(--background); }
+  body { margin: 0; background: var(--background); color: var(--foreground); }
+  button, input, select, textarea { font: inherit; }
+  :focus-visible { outline: 3px solid rgba(11,31,58,.25); outline-offset: 2px; }
+}

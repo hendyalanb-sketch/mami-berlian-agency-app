@@ -38,17 +38,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ reg
     const bridge = new ContentBridgeService({ spreadsheetId: bridgeId, accessToken });
     const current = await bridge.get(workerRegister);
     if (!current) return NextResponse.json({ error: "CONTENT_NOT_FOUND" }, { status: 404 });
-    if (!["GENERATED", "PUBLISHED"].includes(String(current.content_status ?? ""))) {
-      return NextResponse.json({ error: "CONTENT_NOT_GENERATED", contentStatus: current.content_status ?? "INCOMPLETE" }, { status: 409 });
+    if (!["ARCHIVED", "PUBLISHED"].includes(String(current.content_status ?? "")) || !current.export_drive_id) {
+      return NextResponse.json({ error: "EXPORT_REQUIRED_BEFORE_PUBLISH", contentStatus: current.content_status ?? "INCOMPLETE" }, { status: 409 });
     }
 
-    const result = await markWorkerPublished({
-      bridge,
-      workerRegister,
-      channel: channelCode,
-      actorUserId: session.user.id,
-      actorLabel: session.user.email ?? session.user.id,
-    });
+    const result = await markWorkerPublished({ bridge, workerRegister, channel: channelCode, actorUserId: session.user.id, actorLabel: session.user.email ?? session.user.id });
     return NextResponse.json({ ok: true, contentStatus: "PUBLISHED", ...result });
   } catch (error) {
     if (error instanceof GoogleConnectionError) return NextResponse.json({ error: error.code }, { status: 409 });

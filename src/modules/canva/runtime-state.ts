@@ -33,8 +33,10 @@ export async function getCanvaRuntimeState(userId?: string | null) {
     version: canvaTemplates.version,
   }).from(canvaTemplates).where(inArray(canvaTemplates.code, [...CANVA_WORKER_TEMPLATE_CODES]));
 
-  const templates = rows
-    .filter((row) => row.isActive && Boolean(row.canvaTemplateId))
+  const rowByCode = new Map(rows.map((row) => [row.code, row]));
+  const templates = CANVA_WORKER_TEMPLATE_CODES
+    .map((code) => rowByCode.get(code))
+    .filter((row): row is NonNullable<typeof row> => Boolean(row?.isActive && row.canvaTemplateId))
     .map((row) => ({ code: row.code, name: row.name, version: row.version, designId: row.canvaTemplateId }));
   const first = templates[0];
 

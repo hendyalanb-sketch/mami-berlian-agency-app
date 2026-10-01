@@ -1,27 +1,44 @@
-# Implementation Status — 2026-10-01
+# Implementation Status — Content Operations v3
 
-## Completed
-- [x] Audited existing GitHub repositories; selected legacy `mami-berlian-agency-app` for safe refactor branch.
-- [x] Created `content-ops-v3` branch; main remains untouched.
-- [x] Verified Google Register spreadsheet and exact `Register Pekerja` headers.
-- [x] Verified existing photo folder in Mami Berlian Drive.
-- [x] Created native Google Sheet `MBA - CONTENT BRIDGE` with the 35-field v3 contract.
-- [x] Verified Canva master folder and MB-01 source design.
-- [x] Confirmed MB-01 source currently has no autofill fields.
-- [x] Added Next.js mobile-first application shell and PWA manifest.
-- [x] Added Drizzle master/technical schema.
-- [x] Added readiness and privacy rule modules + unit tests.
-- [x] Added health endpoint and environment contract.
+Updated: 2026-10-01
 
-## Pending external provisioning
-- [ ] Create/select Neon project.
-- [ ] Create production/staging Neon branches.
-- [ ] Generate/test/apply Drizzle migration on staging.
-- [ ] Seed master data and baseline salary rates.
-- [ ] Create/link Vercel Content Operations project.
-- [ ] Configure environment variables/secrets in Vercel.
-- [ ] Configure Google OAuth and internal whitelist.
-- [ ] Copy and label Canva MB-01 autofill fields; validate template health.
+## Completed in branch `content-ops-v3`
+- Next.js App Router + TypeScript foundation
+- Mobile-first shell, bottom navigation, desktop sidebar
+- PWA manifest + safe service worker
+- Dashboard / Worker / Content / Master / Integration screens
+- Drizzle schema for technical + master data
+- Baseline master/rate seed
+- Readiness, salary, privacy/public projection rules
+- Server-side chunked Register read service
+- Native Google Sheets Content Bridge service
+- Content Bridge merge-patch semantics (partial updates no longer blank unrelated fields)
+- Content hash / generation job / audit services
+- Runtime capability matrix + `/api/capabilities`
+- Mobile photo preparation: camera/gallery, validation, rotation, resize/compression preview, standard Drive filename
+- Public preview screen with PII-safe whitelist messaging
+- Publish tracking service contract
+- Unit tests for readiness, privacy, content hash, Bridge merge, capabilities, and photo naming/validation
+- GitHub CI: install, tests, lint, production build
+- Drizzle migration artifact workflow
 
-## Safety
-No destructive production operation has been performed. Register remains read-only and existing Canva source designs have not been edited.
+## External assets prepared
+- Register source: `REGISTER PEKERJA MAJIKAN` (READ ONLY)
+- Content Bridge: `MBA - CONTENT BRIDGE`
+- Photo folder: `Foto Pekerja Mami Berlian`
+- Canva master folder verified
+- MB-01 source verified at 1080×1350; source has no autofill dataset yet
+
+## Blocked by provisioning / credentials
+- Neon project ID does not exist in available project context; connector is unscoped and cannot enumerate/create projects
+- No dedicated Vercel Content Operations project exists; connected `deploy_to_vercel` action is unavailable at runtime
+- Google OAuth runtime credentials/callback not provisioned
+- Canva OAuth/autofill dataset not provisioned; Canva mutation is blocked by the current connector safety layer
+
+## Safety state
+- `main` untouched
+- Register untouched
+- Existing Canva source untouched
+- No production DB mutation
+- No secrets committed
+- Generate actions must remain locked until capability health passes

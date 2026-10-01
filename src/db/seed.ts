@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "./client";
 import {
+  appUsers,
   canvaTemplates,
   ctaProfiles,
   experienceLevels,
@@ -46,6 +47,24 @@ const zones = [
 
 const channels = ["WHATSAPP", "INSTAGRAM", "FACEBOOK", "KATALOG", "WEBSITE", "OTHER"];
 
+async function seedInitialAdmin() {
+  const initialAdminEmail = process.env.INITIAL_ADMIN_EMAIL?.trim().toLowerCase();
+  if (!initialAdminEmail) {
+    console.warn("INITIAL_ADMIN_EMAIL is not set; no bootstrap admin was created.");
+    return;
+  }
+
+  await db!.insert(appUsers).values({
+    email: initialAdminEmail,
+    role: "ADMIN",
+    canGenerate: true,
+    isActive: true,
+  }).onConflictDoUpdate({
+    target: appUsers.email,
+    set: { role: "ADMIN", canGenerate: true, isActive: true, updatedAt: new Date() },
+  });
+}
+
 async function upsertMasters() {
   for (const [code, name] of categories) {
     await db!.insert(workerCategories).values({ code, name }).onConflictDoUpdate({ target: workerCategories.code, set: { name, isActive: true } });
@@ -77,7 +96,7 @@ async function upsertMasters() {
     await db!.insert(placementOptions).values({ code, name, salaryZoneId: zoneId[zone] }).onConflictDoUpdate({ target: placementOptions.code, set: { name, salaryZoneId: zoneId[zone], isActive: true } });
   }
 
-  await db!.insert(ctaProfiles).values({
+  const defaultCta = {
     name: "Default Mami Berlian",
     primaryPhone: "085600619534",
     secondaryPhone: "081252981527",
@@ -87,17 +106,27 @@ async function upsertMasters() {
     qrTarget: "https://wa.me/6285600619534",
     isDefault: true,
     isActive: true,
-  });
+  } as const;
+  const existingDefaultCta = await db!.select({ id: ctaProfiles.id }).from(ctaProfiles).where(eq(ctaProfiles.isDefault, true)).limit(1);
+  if (existingDefaultCta[0]) {
+    await db!.update(ctaProfiles).set({ ...defaultCta, updatedAt: new Date() }).where(eq(ctaProfiles.id, existingDefaultCta[0].id));
+  } else {
+    await db!.insert(ctaProfiles).values(defaultCta);
+  }
 
   await db!.insert(canvaTemplates).values({
     code: "MB-01",
     name: "Pekerja Ready",
-    canvaTemplateId: process.env.CANVA_MB01_SOURCE_DESIGN_ID ?? "DAHWsPb3Osk",
+    canvaTemplateId: process.env.CANVA_MB01_WORKING_DESIGN_ID ?? process.env.CANVA_MB01_SOURCE_DESIGN_ID ?? "DAHWvDoKJo8",
     version: "v1",
     contentType: "PEKERJA_READY",
     requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_AGE","WORKER_ORIGIN","WORKER_CATEGORY","WORKER_SKILLS","WORKER_PLACEMENT","WORKER_SALARY","CTA_TEXT"],
     isActive: false,
-  }).onConflictDoUpdate({ target: canvaTemplates.code, set: { isActive: false } });
+  }).onConflictDoUpdate({ target: canvaTemplates.code, set: {
+    canvaTemplateId: process.env.CANVA_MB01_WORKING_DESIGN_ID ?? process.env.CANVA_MB01_SOURCE_DESIGN_ID ?? "DAHWvDoKJo8",
+    isActive: false,
+    updatedAt: new Date(),
+  } });
 
   const mappings = [
     ["CATEGORY", "ART", "ART"],
@@ -140,6 +169,7 @@ async function seedRates() {
   }
 }
 
+await seedInitialAdmin();
 await upsertMasters();
 await seedRates();
 console.log("Baseline master seed completed.");

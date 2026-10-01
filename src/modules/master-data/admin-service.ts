@@ -35,6 +35,11 @@ export function normalizeMasterCode(value: string) {
   return value.trim().toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
 }
 
+function normalizeTemplateCode(value: string) {
+  const normalized = normalizeMasterCode(value);
+  return normalized === "MB_01" ? "MB-01" : normalized;
+}
+
 export async function getMasterAdminSnapshot() {
   const database = requireDb();
   const [categories, skillRows, experiences, zones, placements, mappings, rates, templates, channels, ctas, displayLabels] = await Promise.all([
@@ -156,29 +161,32 @@ export async function upsertPublishChannel(input: { code: string; name: string }
   const code = normalizeMasterCode(input.code);
   const name = input.name.trim();
   if (!code || !name) throw new MasterAdminError("INVALID_CHANNEL_INPUT");
-  return database.insert(publishChannels).values({ code, name, isActive: true }).onConflictDoUpdate({
-    target: publishChannels.code,
-    set: { name, isActive: true, updatedAt: new Date() },
-  }).returning();
+  return database.insert(publishChannels).values({ code, name, isActive: true }).onConflictDoUpdate({ target: publishChannels.code, set: { name, isActive: true, updatedAt: new Date() } }).returning();
 }
 
 export async function upsertCanvaTemplate(input: { code: string; name: string; canvaTemplateId: string; version: string; contentType: string }) {
   const database = requireDb();
-  const code = normalizeMasterCode(input.code);
+  const code = normalizeTemplateCode(input.code);
   const name = input.name.trim();
   const canvaTemplateId = input.canvaTemplateId.trim();
   const version = input.version.trim();
   const contentType = normalizeMasterCode(input.contentType);
   if (!code || !name || !canvaTemplateId || !version || !contentType) throw new MasterAdminError("INVALID_TEMPLATE_INPUT");
-  const requiredFieldsJson = code === "MB_01" || code === "MB-01" ? [...MB01_REQUIRED_FIELDS] : [];
-  const normalizedCode = code === "MB_01" ? "MB-01" : code;
-  return database.insert(canvaTemplates).values({ normalizedCode } as never).catch(async () => {
-    const [existing] = await database.select().from(canvaTemplates).where(eq(canvaTemplates.code, normalizedCode)).limit(1);
-    if (existing) {
-      return database.update(canvaTemplates).set({ name, canvaTemplateId, version, contentType, requiredFieldsJson: requiredFieldsJson.length ? requiredFieldsJson : existing.requiredFieldsJson, isActive: false, updatedAt: new Date() }).where(eq(canvaTemplates.id, existing.id)).returning();
-    }
-    return database.insert(canvaTemplates).values({ code: normalizedCode, name, canvaTemplateId, version, contentType, requiredFieldsJson, isActive: false }).returning();
-  });
+
+  const [existing] = await database.select().from(canvaTemplates).where(eq(canvaTemplates.code, code)).limit(1);
+  const requiredFieldsJson = code === "MB-01" ? [...MB01_REQUIRED_FIELDS] : existing?.requiredFieldsJson ?? [];
+  if (existing) {
+    return database.update(canvaTemplates).set({
+      name,
+      canvaTemplateId,
+      version,
+      contentType,
+      requiredFieldsJson,
+      isActive: false,
+      updatedAt: new Date(),
+    }).where(eq(canvaTemplates.id, existing.id)).returning();
+  }
+  return database.insert(canvaTemplates).values({ code, name, canvaTemplateId, version, contentType, requiredFieldsJson, isActive: false }).returning();
 }
 
 export async function upsertCtaProfile(input: {

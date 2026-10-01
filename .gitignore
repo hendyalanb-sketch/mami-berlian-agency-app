@@ -20,3 +20,12 @@
 /fuel/app/cache/*/*
 /fuel/app/config/crypt.php
 api/config.local.php
+
+# Next.js / Node (Content Ops v3)
+/node_modules/
+/.next/
+/out/
+.env*.local
+*.tsbuildinfo
+next-env.d.ts
+.vercel

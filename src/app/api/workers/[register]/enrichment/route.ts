@@ -8,6 +8,7 @@ import { ContentBridgeService } from "@/modules/bridge/content-bridge-service";
 import { decodeStringList, encodeStringList, parseBridgeBoolean, readinessFromBridge } from "@/modules/enrichment/serialization";
 import { getGoogleAccessToken, GoogleConnectionError } from "@/modules/google/oauth-token-service";
 import { getWorkerMasterOptions, resolveSalaryForSelection, validateSkillCodes } from "@/modules/master-data/service";
+import { getCopyPresets } from "@/modules/settings/service";
 import { WorkerSourceService } from "@/modules/workers/source-service";
 
 export const runtime = "nodejs";
@@ -49,10 +50,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ reg
     const worker = await source.getByRegister(decodeURIComponent(register));
     if (!worker) return NextResponse.json({ error: "WORKER_NOT_FOUND" }, { status: 404 });
     const bridgeRecord = await bridge.get(worker.workerRegister);
-    const master = await getWorkerMasterOptions();
+    const [master, copyPresets] = await Promise.all([getWorkerMasterOptions(), getCopyPresets()]);
     return NextResponse.json({
       worker,
       master,
+      copyPresets,
       form: {
         category: String(bridgeRecord?.category ?? worker.categoryHint ?? ""),
         experience: String(bridgeRecord?.experience_level ?? ""),

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, Pencil, Plus, Power, ShieldCheck } from "lucide-react";
+import { CopyPresetsEditor } from "@/components/copy-presets-editor";
 import { Alert, ErrorAlert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ACTIVE_STATUS, TEMPLATE_STATUS } from "@/lib/status-labels";
+import type { CopyPresets } from "@/modules/content/copy-presets";
 
 type Template = {
   id: string;
@@ -41,6 +43,8 @@ type Snapshot = {
   channels: Channel[];
   ctas: Cta[];
   displayLabels: Record<DisplayKey, string>;
+  categories: Array<{ code: string; name: string; isActive: boolean }>;
+  copyPresets: CopyPresets;
 };
 
 const labelNames: Record<DisplayKey, string> = {
@@ -317,6 +321,8 @@ export function ContentMasterManager({ enabled }: { enabled: boolean }) {
           </CardContent>
         </Card>
       </div>
+
+      <CopyPresetsEditor presets={data.copyPresets} categories={data.categories} busy={busy} onSave={(value) => mutate("POST", { resource: "copyPresets", value })} />
 
       <Card>
         <CardHeader>

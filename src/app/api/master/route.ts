@@ -12,6 +12,7 @@ import {
   getMasterAdminSnapshot,
   MasterAdminError,
   setMasterActive,
+  updateCopyPresets,
   updateDisplayLabel,
   upsertCanvaTemplate,
   upsertCtaProfile,
@@ -61,7 +62,8 @@ const displaySchema = z.object({
   key: z.enum(["display.ready_label", "display.placement_label", "display.salary_label", "display.footer_text"]),
   value: z.string().min(1).max(240),
 });
-const createSchema = z.union([simpleSchema, placementSchema, mappingSchema, rateSchema, channelSchema, templateSchema, ctaSchema, displaySchema]);
+const copyPresetsSchema = z.object({ resource: z.literal("copyPresets"), value: z.unknown() });
+const createSchema = z.union([simpleSchema, placementSchema, mappingSchema, rateSchema, channelSchema, templateSchema, ctaSchema, displaySchema, copyPresetsSchema]);
 const toggleSchema = z.object({ resource: z.enum(["category", "skill", "experience", "zone", "placement", "mapping", "rate", "channel", "cta"]), id: z.string().uuid(), isActive: z.boolean() });
 
 async function requireAdmin() {
@@ -96,13 +98,14 @@ export async function POST(request: Request) {
     else if (payload.resource === "template") await upsertCanvaTemplate(payload);
     else if (payload.resource === "cta") await upsertCtaProfile(payload);
     else if (payload.resource === "display") await updateDisplayLabel({ ...payload, updatedBy: auth.session.user.id });
+    else if (payload.resource === "copyPresets") await updateCopyPresets({ value: payload.value, updatedBy: auth.session.user.id });
     else await createSimpleMaster(payload.resource, payload);
 
     await writeAudit({
       userId: auth.session.user.id,
       action: "MASTER_UPSERT",
       entityType: `MASTER_${payload.resource.toUpperCase()}`,
-      entityId: "id" in payload && payload.id ? payload.id : "code" in payload ? payload.code : "key" in payload ? payload.key : undefined,
+      entityId: "id" in payload && payload.id ? payload.id : "code" in payload ? payload.code : "key" in payload ? payload.key : payload.resource === "copyPresets" ? "content.copy_presets" : undefined,
       after: payload,
     });
     return NextResponse.json({ ok: true, snapshot: await getMasterAdminSnapshot() });

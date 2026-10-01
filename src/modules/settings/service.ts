@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { appSettings } from "@/db/schema";
+import { COPY_PRESETS_SETTING_KEY, normalizeCopyPresets, type CopyPresets } from "@/modules/content/copy-presets";
 
 export const APP_SETTING_KEYS = {
   googleContentRootFolderId: "google.content_root_folder_id",
@@ -71,4 +72,12 @@ export async function getGoogleStorageSettings() {
       export: exportFolder ? "APP_SETTING" as const : process.env.GOOGLE_EXPORT_FOLDER_ID ? "ENV" as const : "NONE" as const,
     },
   };
+}
+
+export async function getCopyPresets() {
+  return normalizeCopyPresets(await getAppSetting<unknown>(COPY_PRESETS_SETTING_KEY));
+}
+
+export async function setCopyPresets(value: CopyPresets, updatedBy?: string) {
+  await setAppSetting(COPY_PRESETS_SETTING_KEY, value, updatedBy);
 }

@@ -7,7 +7,9 @@ import { WorkerContentActions } from "@/components/worker-content-actions";
 import { WorkerEnrichmentForm, type EnrichmentPayload } from "@/components/worker-enrichment-flow";
 import { WorkerPhotoPrep } from "@/components/worker-photo-prep";
 import { WorkflowStepper } from "@/components/workflow-stepper";
+import { CopyPresetsEditor } from "@/components/copy-presets-editor";
 import { CONTENT_STATUS } from "@/lib/status-labels";
+import { COPY_PRESETS_DEFAULTS } from "@/modules/content/copy-presets";
 import { buildWorkflowSteps } from "@/modules/workflow/steps";
 
 // Galeri komponen dengan data contoh FIKTIF (tanpa PII) untuk cek tampilan 360/390/412 px
@@ -52,6 +54,10 @@ export function DevUiGallery() {
     <section className="grid gap-4 lg:grid-cols-[1.3fr_.7fr] [&>*]:min-w-0">
       <Card><CardHeader><CardTitle>Data pekerja</CardTitle></CardHeader><CardContent><WorkerEnrichmentForm workerRegister="DEMO-001" data={fixture} editable onSaved={() => undefined} /></CardContent></Card>
       <Card><CardHeader><CardTitle>Foto</CardTitle></CardHeader><CardContent><WorkerPhotoPrep workerRegister="DEMO-001" driveEnabled editable /></CardContent></Card>
+    </section>
+
+    <section className="space-y-3"><h2 className="font-bold">Master: rekomendasi teks</h2>
+      <CopyPresetsEditor presets={COPY_PRESETS_DEFAULTS} categories={fixture.master.categories.map((item) => ({ ...item, isActive: true }))} busy={false} onSave={async () => true} />
     </section>
 
     <section className="space-y-3"><h2 className="font-bold">Workflow Konten per status</h2>

@@ -72,6 +72,7 @@ export const ERROR_MESSAGES: Record<string, ErrorInfo> = {
   INVALID_DISPLAY_KEY: { title: "Label tampilan tidak dikenal.", action: "Muat ulang halaman lalu coba lagi." },
   INVALID_DISPLAY_VALUE: { title: "Teks label tampilan tidak valid.", action: "Isi teks label dengan panjang yang wajar." },
   DISPLAY_LABEL_REQUIRED: { title: "Label tampilan wajib diisi.", action: "Isi teks label sebelum menyimpan." },
+  INVALID_COPY_PRESETS: { title: "Rekomendasi teks tidak valid.", action: "Pastikan setiap baris berisi teks (maks. 160 karakter, maks. 20 baris), lalu simpan lagi." },
   CTA_NOT_FOUND: { title: "CTA tidak ditemukan.", action: "Muat ulang halaman Master Data lalu coba lagi." },
 
   // Foto

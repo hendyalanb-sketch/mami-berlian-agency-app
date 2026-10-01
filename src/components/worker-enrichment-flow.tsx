@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, Loader2, Save } from "lucide-react";
+import { Check, CheckCircle2, Loader2, Save, Sparkles } from "lucide-react";
 import { Alert, ErrorAlert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { readinessFieldLabel } from "@/lib/status-labels";
 import { cn } from "@/lib/utils";
+import { buildCopySuggestions, COPY_FIELDS, COPY_PRESETS_DEFAULTS, type CopyContext, type CopyFieldKey, type CopyPresets } from "@/modules/content/copy-presets";
 
 type Option = { code: string; name: string };
 export type EnrichmentFormState = {
@@ -31,6 +32,7 @@ export type EnrichmentPayload = {
   salaryDisplay: string;
   contentStatus: string;
   readiness: { status: string; score: number; missing: string[]; checks: Record<string, boolean> };
+  copyPresets?: CopyPresets;
 };
 export type EnrichmentSaveResult = Pick<EnrichmentPayload, "salaryDisplay" | "contentStatus" | "readiness" | "form">;
 
@@ -80,21 +82,43 @@ function missingRequired(form: EnrichmentFormState) {
   return REQUIRED.filter(({ key }) => (key === "skills" ? form.skills.length === 0 : !form[key]));
 }
 
-function TextField({ id, label, value, maxLength, placeholder, disabled, multiline = false, onChange }: {
+const COPY_FIELD_IDS: Record<CopyFieldKey, string> = {
+  publicTitle: "field-public-title",
+  workerQuote: "field-quote",
+  specialty: "field-specialty",
+  liveInStatus: "field-live-in",
+  availability: "field-availability",
+  trainingStatus: "field-training",
+  documentStatus: "field-document",
+};
+
+function CopyField({ id, label, value, maxLength, factual, multiline, suggestions, disabled, onChange }: {
   id: string;
   label: string;
   value: string;
   maxLength: number;
-  placeholder: string;
+  factual: boolean;
+  multiline: boolean;
+  suggestions: string[];
   disabled: boolean;
-  multiline?: boolean;
   onChange: (value: string) => void;
 }) {
-  return <Field label={label} hint={`${value.length}/${maxLength}`}>
+  const placeholder = suggestions.length ? "Atau ketik sendiri…" : "Ketik sendiri…";
+  return <div>
+    <div className="mb-1.5 flex items-center justify-between gap-3 text-xs font-bold text-slate-600"><label htmlFor={id}>{label}</label><span className="font-medium text-slate-400">{value.length}/{maxLength}</span></div>
+    {suggestions.length > 0 && <div role="group" aria-label={`Rekomendasi ${label}`} className="mb-2 flex flex-wrap gap-1.5">
+      {suggestions.map((suggestion) => {
+        const selected = value.trim() === suggestion;
+        return <button key={suggestion} type="button" disabled={disabled} aria-pressed={selected} onClick={() => onChange(selected ? "" : suggestion)} className={cn("inline-flex min-h-9 max-w-full items-center gap-1 rounded-xl border px-2.5 py-1.5 text-left text-xs font-semibold leading-snug", selected ? "border-brand-navy bg-brand-navy text-white" : "border-pink-200 bg-white text-slate-700 hover:border-pink-300")}>
+          {selected && <Check size={13} className="shrink-0" aria-hidden />}<span>{suggestion}</span>
+        </button>;
+      })}
+    </div>}
     {multiline
       ? <Textarea id={id} disabled={disabled} value={value} maxLength={maxLength} rows={3} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} />
       : <Input id={id} disabled={disabled} value={value} maxLength={maxLength} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} />}
-  </Field>;
+    {factual && <p className="mt-1 text-[11px] text-slate-500">Pilih hanya jika benar untuk pekerja ini — tampil sebagai fakta di konten publik.</p>}
+  </div>;
 }
 
 export function WorkerEnrichmentForm({ workerRegister, data, editable, onSaved }: {
@@ -113,6 +137,28 @@ export function WorkerEnrichmentForm({ workerRegister, data, editable, onSaved }
 
   const dirty = useMemo(() => JSON.stringify(form) !== JSON.stringify(savedForm), [form, savedForm]);
   const missing = missingRequired(form);
+  const presets = data.copyPresets ?? COPY_PRESETS_DEFAULTS;
+  const nameOf = (options: Option[], code: string) => options.find((option) => option.code === code)?.name ?? "";
+  const copyContext: CopyContext = {
+    categoryCode: form.category,
+    categoryName: nameOf(data.master.categories, form.category),
+    experienceName: nameOf(data.master.experiences, form.experience),
+    skillNames: form.skills.map((code) => nameOf(data.master.skills, code)).filter(Boolean),
+    firstName: data.worker.name.trim().split(/\s+/)[0] ?? "",
+  };
+  const suggestions = Object.fromEntries(COPY_FIELDS.map((field) => [field.key, buildCopySuggestions(presets, field.key, copyContext)])) as Record<CopyFieldKey, string[]>;
+  const promoFields = COPY_FIELDS.filter((field) => !field.factual).map((field) => field.key);
+  const promoFillable = promoFields.some((key) => !form[key].trim() && suggestions[key].length > 0);
+
+  function autofillPromo() {
+    // Hanya teks promosi; field fakta (menginap, ketersediaan, training, dokumen) wajib dipilih manual.
+    setForm((current) => {
+      const next = { ...current };
+      for (const key of promoFields) if (!next[key].trim() && suggestions[key][0]) next[key] = suggestions[key][0];
+      return next;
+    });
+    setSavedAt(null);
+  }
   const fieldError = (key: RequiredKey) => (showErrors ? missing.find((item) => item.key === key)?.message ?? null : null);
 
   useEffect(() => {
@@ -188,17 +234,25 @@ export function WorkerEnrichmentForm({ workerRegister, data, editable, onSaved }
       <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600">Rate gaji: <strong className="text-brand-navy">{data.salaryDisplay || "dihitung otomatis setelah disimpan"}</strong></p>
     </section>
 
-    <section aria-labelledby="enrichment-public" className="space-y-4 rounded-2xl border border-pink-100 bg-pink-50/30 p-4">
-      <div><h3 id="enrichment-public" className="text-sm font-black text-brand-navy">Profil publik & Canva</h3><p className="mt-1 text-xs leading-5 text-slate-500">Opsional. Dipakai di template MB-01A Personal dan MB-01B Promo. Kosongkan jika belum terverifikasi.</p></div>
-      <TextField id="field-public-title" label="Headline promosi" value={form.publicTitle} maxLength={72} placeholder="Contoh: Suster bayi siap interview" disabled={!editable} onChange={(value) => update("publicTitle", value)} />
-      <TextField id="field-quote" label="Kata-kata pekerja" value={form.workerQuote} maxLength={120} placeholder="Contoh: Saya sabar, telaten, dan senang merawat anak." disabled={!editable} multiline onChange={(value) => update("workerQuote", value)} />
-      <TextField id="field-specialty" label="Spesialisasi singkat" value={form.specialty} maxLength={40} placeholder="Contoh: ART Momong / Suster Bayi" disabled={!editable} onChange={(value) => update("specialty", value)} />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <TextField id="field-live-in" label="Status menginap" value={form.liveInStatus} maxLength={32} placeholder="Contoh: Siap menginap" disabled={!editable} onChange={(value) => update("liveInStatus", value)} />
-        <TextField id="field-availability" label="Ketersediaan mulai" value={form.availability} maxLength={54} placeholder="Contoh: Siap mulai minggu ini" disabled={!editable} onChange={(value) => update("availability", value)} />
-        <TextField id="field-training" label="Status training" value={form.trainingStatus} maxLength={42} placeholder="Contoh: Terlatih di LPK" disabled={!editable} onChange={(value) => update("trainingStatus", value)} />
-        <TextField id="field-document" label="Status dokumen" value={form.documentStatus} maxLength={42} placeholder="Contoh: Dokumen lengkap" disabled={!editable} onChange={(value) => update("documentStatus", value)} />
+    <section aria-labelledby="enrichment-public" className="space-y-5 rounded-2xl border border-pink-100 bg-pink-50/30 p-4">
+      <div>
+        <h3 id="enrichment-public" className="text-sm font-black text-brand-navy">Profil publik & Canva</h3>
+        <p className="mt-1 text-xs leading-5 text-slate-500">Teks ini tampil di desain MB-01A/MB-01B untuk calon majikan. Ketuk rekomendasi untuk memakai, lalu sesuaikan bila perlu — atau ketik sendiri.</p>
+        {!form.category && <p className="mt-2 text-xs font-semibold text-amber-700">Pilih kategori dulu agar rekomendasinya lebih pas.</p>}
+        {editable && <Button type="button" variant="secondary" className="mt-3 min-h-10 gap-2 text-xs" onClick={autofillPromo} disabled={!promoFillable}><Sparkles size={15} aria-hidden />Isi otomatis teks promosi</Button>}
       </div>
+      {COPY_FIELDS.map((field) => <CopyField
+        key={field.key}
+        id={COPY_FIELD_IDS[field.key]}
+        label={field.label}
+        value={form[field.key]}
+        maxLength={field.maxLength}
+        factual={field.factual}
+        multiline={field.key === "workerQuote"}
+        suggestions={suggestions[field.key]}
+        disabled={!editable}
+        onChange={(value) => update(field.key, value)}
+      />)}
     </section>
 
     <label className="flex min-h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 text-sm">

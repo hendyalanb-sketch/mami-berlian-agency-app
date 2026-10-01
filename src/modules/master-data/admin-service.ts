@@ -13,9 +13,12 @@ import {
   workerCategories,
 } from "@/db/schema";
 import { MB01_REQUIRED_FIELDS } from "@/modules/canva/template-health";
+import { copyPresetsSchema } from "@/modules/content/copy-presets";
 import {
   APP_SETTING_KEYS,
+  getCopyPresets,
   getDisplayLabels,
+  setCopyPresets,
   setDisplayLabel,
   type DisplaySettingKey,
 } from "@/modules/settings/service";
@@ -42,7 +45,7 @@ function normalizeTemplateCode(value: string) {
 
 export async function getMasterAdminSnapshot() {
   const database = requireDb();
-  const [categories, skillRows, experiences, zones, placements, mappings, rates, templates, channels, ctas, displayLabels] = await Promise.all([
+  const [categories, skillRows, experiences, zones, placements, mappings, rates, templates, channels, ctas, displayLabels, copyPresets] = await Promise.all([
     database.select().from(workerCategories),
     database.select().from(skills),
     database.select().from(experienceLevels),
@@ -54,6 +57,7 @@ export async function getMasterAdminSnapshot() {
     database.select().from(publishChannels),
     database.select().from(ctaProfiles),
     getDisplayLabels(),
+    getCopyPresets(),
   ]);
 
   const zoneById = new Map(zones.map((row) => [row.id, row]));
@@ -84,6 +88,7 @@ export async function getMasterAdminSnapshot() {
     channels: channels.sort((a, b) => a.code.localeCompare(b.code)),
     ctas: ctas.sort((a, b) => Number(b.isDefault) - Number(a.isDefault) || a.name.localeCompare(b.name)),
     displayLabels,
+    copyPresets,
   };
 }
 
@@ -237,6 +242,13 @@ export async function updateDisplayLabel(input: { key: DisplaySettingKey; value:
   } catch {
     throw new MasterAdminError("INVALID_DISPLAY_VALUE");
   }
+}
+
+export async function updateCopyPresets(input: { value: unknown; updatedBy?: string }) {
+  requireDb();
+  const parsed = copyPresetsSchema.safeParse(input.value);
+  if (!parsed.success) throw new MasterAdminError("INVALID_COPY_PRESETS");
+  await setCopyPresets(parsed.data, input.updatedBy);
 }
 
 export async function setMasterActive(input: { resource: "category" | "skill" | "experience" | "zone" | "placement" | "mapping" | "rate" | "channel" | "cta"; id: string; isActive: boolean }) {

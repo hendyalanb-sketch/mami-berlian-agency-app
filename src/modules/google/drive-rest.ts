@@ -20,6 +20,22 @@ export async function getDriveFileMetadata(input: { accessToken: string; fileId:
   return response.json() as Promise<DriveFileMetadata>;
 }
 
+export async function createDriveFolder(input: { accessToken: string; name: string; parentId?: string | null }) {
+  const body = {
+    name: input.name,
+    mimeType: "application/vnd.google-apps.folder",
+    ...(input.parentId ? { parents: [input.parentId] } : {}),
+  };
+  const response = await fetch("https://www.googleapis.com/drive/v3/files?fields=id,name,mimeType,webViewLink", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${input.accessToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error(`DRIVE_FOLDER_CREATE_FAILED:${response.status}`);
+  return response.json() as Promise<{ id: string; name: string; mimeType: string; webViewLink?: string }>;
+}
+
 export async function uploadImageToDrive(input: { accessToken: string; folderId: string; fileName: string; contentType: string; bytes: ArrayBuffer }) {
   const boundary = `mba_${crypto.randomUUID().replaceAll("-", "")}`;
   const metadata = JSON.stringify({ name: input.fileName, parents: [input.folderId] });

@@ -1,0 +1,30 @@
+name: Schema Artifact
+
+on:
+  push:
+    branches: [content-ops-v3]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  generate-schema:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Generate Drizzle migration
+        run: npm run db:generate
+      - name: Upload migration artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: drizzle-migration
+          path: drizzle/
+          if-no-files-found: error

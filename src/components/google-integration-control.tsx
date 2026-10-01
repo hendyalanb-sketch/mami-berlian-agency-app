@@ -55,7 +55,7 @@ export function GoogleIntegrationControl({ configured }: { configured: boolean }
 
   return <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div><p className="font-bold text-[#0B1F3A]">Google Runtime Health</p><p className="mt-1 text-xs text-slate-500">Tes read-only untuk Register, Content Bridge, folder foto, dan folder export.</p></div>
+      <div><p className="font-bold text-brand-navy">Google Runtime Health</p><p className="mt-1 text-xs text-slate-500">Tes read-only untuk Register, Content Bridge, folder foto, dan folder export.</p></div>
       <div className="flex flex-wrap gap-2"><Button onClick={validate} disabled={busy || !configured} className="gap-2"><RefreshCw size={15} className={busy ? "animate-spin" : ""}/>{busy ? "Memproses…" : "Periksa Google"}</Button>{needsStorageProvision && <Button variant="secondary" onClick={provision} disabled={busy || !configured} className="gap-2"><FolderPlus size={15}/>Provision Safe Folders</Button>}</div>
     </div>
     {!configured && <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-800">Google OAuth dan ID spreadsheet belum lengkap.</p>}

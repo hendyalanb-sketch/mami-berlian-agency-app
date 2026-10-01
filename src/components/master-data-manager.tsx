@@ -84,9 +84,9 @@ export function MasterDataManager({ enabled }: { enabled: boolean }) {
 
   return <div className="space-y-5">
     <div className="grid gap-3 sm:grid-cols-3">
-      <Card><CardContent className="p-4"><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Master option</p><p className="mt-1 text-2xl font-black text-[#0B1F3A]">{count}</p></CardContent></Card>
-      <Card><CardContent className="p-4"><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Mapping Register</p><p className="mt-1 text-2xl font-black text-[#0B1F3A]">{data.mappings.length}</p></CardContent></Card>
-      <Card><CardContent className="p-4"><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Rate Gaji</p><p className="mt-1 text-2xl font-black text-[#0B1F3A]">{data.rates.length}</p></CardContent></Card>
+      <Card><CardContent className="p-4"><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Master option</p><p className="mt-1 text-2xl font-black text-brand-navy">{count}</p></CardContent></Card>
+      <Card><CardContent className="p-4"><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Mapping Register</p><p className="mt-1 text-2xl font-black text-brand-navy">{data.mappings.length}</p></CardContent></Card>
+      <Card><CardContent className="p-4"><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Rate Gaji</p><p className="mt-1 text-2xl font-black text-brand-navy">{data.rates.length}</p></CardContent></Card>
     </div>
 
     {error && <p className="rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p>}

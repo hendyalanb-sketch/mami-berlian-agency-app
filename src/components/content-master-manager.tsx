@@ -112,8 +112,8 @@ export function ContentMasterManager({ enabled }: { enabled: boolean }) {
 
   return <div className="space-y-5 border-t border-slate-200 pt-6">
     <header>
-      <p className="text-xs font-black uppercase tracking-[.18em] text-[#E7508B]">Master Konten & Publikasi</p>
-      <h3 className="mt-1 text-xl font-black text-[#0B1F3A]">Kontrol tampilan dan distribusi konten</h3>
+      <p className="text-xs font-black uppercase tracking-[.18em] text-brand-pink">Master Konten & Publikasi</p>
+      <h3 className="mt-1 text-xl font-black text-brand-navy">Kontrol tampilan dan distribusi konten</h3>
       <p className="mt-1 text-sm text-slate-500">Template Canva tidak dapat diaktifkan manual. Perubahan metadata selalu mengunci template sampai health check Canva berhasil.</p>
     </header>
 

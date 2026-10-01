@@ -20,5 +20,5 @@ export const viewport: Viewport = { themeColor: "#0B1F3A", width: "device-width"
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const session = await getServerSession(authOptions);
-  return <html lang="id"><body className={geist.className}><PwaRegister/><AppShell admin={isAdmin(session?.user.role)}>{children}</AppShell></body></html>;
+  return <html lang="id"><body className={geist.className}><PwaRegister/><AppShell admin={isAdmin(session?.user.role)} user={session?.user ? { name: session.user.name, email: session.user.email, role: session.user.role } : null}>{children}</AppShell></body></html>;
 }

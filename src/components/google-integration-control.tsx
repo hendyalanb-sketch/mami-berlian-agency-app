@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, RefreshCw, TriangleAlert } from "lucide-react";
+import { CheckCircle2, FolderPlus, RefreshCw, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Check = { status: "HEALTHY" | "UNHEALTHY" | "NOT_CONFIGURED"; message: string };
@@ -11,15 +11,18 @@ const labels: Record<string, string> = {
   register: "Register Pekerja",
   bridge: "Content Bridge",
   photoFolder: "Folder Foto Drive",
+  exportFolder: "Folder Export Drive",
 };
 
 export function GoogleIntegrationControl({ configured }: { configured: boolean }) {
   const [health, setHealth] = useState<Health | null>(null);
   const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   async function validate() {
     setBusy(true);
     setHealth(null);
+    setMessage(null);
     try {
       const response = await fetch("/api/integrations/google/health", { cache: "no-store" });
       const body = await response.json() as Health;
@@ -31,14 +34,35 @@ export function GoogleIntegrationControl({ configured }: { configured: boolean }
     }
   }
 
+  async function provision() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const response = await fetch("/api/integrations/google/provision", { method: "POST" });
+      const body = await response.json() as { ok?: boolean; error?: string };
+      if (!response.ok) throw new Error(body.error ?? "GOOGLE_PROVISION_FAILED");
+      setMessage("Folder runtime aman sudah diprovision. Health check dijalankan ulang.");
+      const healthResponse = await fetch("/api/integrations/google/health", { cache: "no-store" });
+      setHealth(await healthResponse.json() as Health);
+    } catch (cause) {
+      setMessage(cause instanceof Error ? cause.message : "GOOGLE_PROVISION_FAILED");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const needsStorageProvision = health?.checks && [health.checks.photoFolder, health.checks.exportFolder].some((check) => check && check.status !== "HEALTHY");
+
   return <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div><p className="font-bold text-[#0B1F3A]">Google Runtime Health</p><p className="mt-1 text-xs text-slate-500">Tes read-only untuk Register, Content Bridge, dan folder foto.</p></div>
-      <Button onClick={validate} disabled={busy || !configured} className="gap-2"><RefreshCw size={15} className={busy ? "animate-spin" : ""}/>{busy ? "Memeriksa…" : "Periksa Google"}</Button>
+      <div><p className="font-bold text-[#0B1F3A]">Google Runtime Health</p><p className="mt-1 text-xs text-slate-500">Tes read-only untuk Register, Content Bridge, folder foto, dan folder export.</p></div>
+      <div className="flex flex-wrap gap-2"><Button onClick={validate} disabled={busy || !configured} className="gap-2"><RefreshCw size={15} className={busy ? "animate-spin" : ""}/>{busy ? "Memproses…" : "Periksa Google"}</Button>{needsStorageProvision && <Button variant="secondary" onClick={provision} disabled={busy || !configured} className="gap-2"><FolderPlus size={15}/>Provision Safe Folders</Button>}</div>
     </div>
-    {!configured && <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-800">Google OAuth/resource ID belum lengkap.</p>}
+    {!configured && <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-800">Google OAuth dan ID spreadsheet belum lengkap.</p>}
     {health?.healthy && <p className="flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-xs font-semibold text-emerald-800"><CheckCircle2 size={16}/>Semua resource Google yang dibutuhkan sehat.</p>}
-    {health?.checks && <div className="grid gap-2 sm:grid-cols-3">{Object.entries(health.checks).map(([key, check]) => <div key={key} className={`rounded-xl border p-3 text-xs ${check.status === "HEALTHY" ? "border-emerald-100 bg-emerald-50 text-emerald-800" : "border-amber-100 bg-amber-50 text-amber-800"}`}><p className="font-bold">{labels[key] ?? key}</p><p className="mt-1 leading-5">{check.message}</p></div>)}</div>}
+    {health?.checks && <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">{Object.entries(health.checks).map(([key, check]) => <div key={key} className={`rounded-xl border p-3 text-xs ${check.status === "HEALTHY" ? "border-emerald-100 bg-emerald-50 text-emerald-800" : "border-amber-100 bg-amber-50 text-amber-800"}`}><p className="font-bold">{labels[key] ?? key}</p><p className="mt-1 leading-5">{check.message}</p></div>)}</div>}
+    {message && <p className="rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-700">{message}</p>}
     {health?.error && <p className="flex items-start gap-2 rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-700"><TriangleAlert size={16} className="mt-0.5 shrink-0"/>{health.error}</p>}
+    <p className="text-[11px] leading-5 text-slate-500">Provision Safe Folders hanya membuat folder baru milik OAuth aplikasi bila target existing tidak dapat dipakai. Folder existing tidak dihapus, dipindah, atau diubah.</p>
   </div>;
 }

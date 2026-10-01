@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   try {
     const token = await exchangeCanvaAuthorizationCode({ code, codeVerifier: verifier, redirectUri });
     await storeCanvaOAuthConnection(session.user.id, token);
-    return NextResponse.redirect(new URL("/integrasi?canva=connected", request.url));
+    return NextResponse.redirect(new URL("/canva-connected", request.url), 303);
   } catch {
     return NextResponse.redirect(new URL("/integrasi?canva=token-error", request.url));
   }

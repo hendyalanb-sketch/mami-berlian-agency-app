@@ -27,7 +27,7 @@ export function buildWorkerTemplateAutofill(input: {
   view: PublicWorkerView;
   bridge: BridgeRecord;
   experienceLabel?: string;
-}) {
+}): Record<string, CanvaAutofillValue> {
   const { templateCode, assetId, view, bridge } = input;
   const experienceLabel = String(input.experienceLabel ?? "").trim();
   const readyStatus = "Siap Interview";
@@ -40,8 +40,8 @@ export function buildWorkerTemplateAutofill(input: {
   const documentStatus = String(bridge.document_status ?? "").trim();
   const profileLine = [view.category, experienceLabel].filter(Boolean).join(" • ");
 
-  const common = {
-    WORKER_PHOTO: { type: "image", asset_id: assetId } as CanvaAutofillValue,
+  const common: Record<string, CanvaAutofillValue> = {
+    WORKER_PHOTO: { type: "image", asset_id: assetId },
     WORKER_CODE: text(view.worker_register, 30),
   };
 
@@ -55,7 +55,7 @@ export function buildWorkerTemplateAutofill(input: {
       WORKER_INTRO_QUOTE: text(workerQuote, 120),
       WORKER_AGE: text(view.age, 18),
       WORKER_READY_STATUS: text(readyStatus, 24),
-    } satisfies Record<string, CanvaAutofillValue>;
+    };
   }
 
   return {
@@ -69,5 +69,5 @@ export function buildWorkerTemplateAutofill(input: {
     WORKER_TRAINING_STATUS: text(trainingStatus, 42),
     WORKER_SKILL_2: text(view.skills[1] ?? "", 48),
     WORKER_DOCUMENT_STATUS: text(documentStatus, 42),
-  } satisfies Record<string, CanvaAutofillValue>;
+  };
 }

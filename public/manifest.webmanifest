@@ -1,0 +1,11 @@
+{
+  "name": "Mami Berlian Content Operations",
+  "short_name": "MBA Content",
+  "description": "Worker enrichment and content operations for Mami Berlian Agency",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F9FC",
+  "theme_color": "#0B1F3A",
+  "lang": "id-ID",
+  "icons": []
+}

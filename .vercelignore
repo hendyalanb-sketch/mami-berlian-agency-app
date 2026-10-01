@@ -1,0 +1,7 @@
+api/
+DB_SCHEMA.sql
+SPEC.md
+API_CONTRACT.md
+ACCEPTANCE_TESTS.md
+codex.md
+*.php

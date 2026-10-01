@@ -1,0 +1,4 @@
+import { Card, CardContent } from "@/components/ui/card";
+const masters = ["Kategori Pekerja","Keahlian","Level Pengalaman","Wilayah Penempatan","Zona Gaji","Rate Gaji","Template Canva","Channel Publikasi","CTA & Kontak","Mapping Register","Label / Display Text"];
+export const metadata = { title: "Master Data" };
+export default function MasterPage(){return <div className="space-y-5"><header><h2 className="text-2xl font-bold text-[#0B1F3A]">Master Data</h2><p className="mt-1 text-sm text-slate-500">Business master dikelola di Neon; gunakan Active/Inactive, bukan hard delete.</p></header><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{masters.map((item)=><Card key={item}><CardContent className="p-4"><p className="font-semibold text-slate-800">{item}</p><p className="mt-1 text-xs text-slate-500">Admin only • schema siap</p></CardContent></Card>)}</div></div>}

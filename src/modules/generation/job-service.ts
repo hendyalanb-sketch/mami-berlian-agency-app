@@ -13,3 +13,28 @@ export async function createOrReuseGenerationJob(input: { workerRegister: string
   const [job] = await db.insert(generationJobs).values({ ...input }).returning();
   return { job, reused: false as const };
 }
+
+export async function getGenerationJob(id: string) {
+  if (!db) throw new Error("Database is not configured");
+  const [job] = await db.select().from(generationJobs).where(eq(generationJobs.id, id)).limit(1);
+  return job ?? null;
+}
+
+export async function updateGenerationJob(id: string, values: Partial<typeof generationJobs.$inferInsert>) {
+  if (!db) throw new Error("Database is not configured");
+  const [job] = await db.update(generationJobs).set({ ...values, updatedAt: new Date() }).where(eq(generationJobs.id, id)).returning();
+  return job;
+}
+
+export async function resetGenerationJob(id: string, requestedBy?: string) {
+  return updateGenerationJob(id, {
+    status: "QUEUED",
+    providerJobId: null,
+    canvaDesignId: null,
+    errorCode: null,
+    errorMessage: null,
+    requestedBy,
+    startedAt: null,
+    completedAt: null,
+  });
+}

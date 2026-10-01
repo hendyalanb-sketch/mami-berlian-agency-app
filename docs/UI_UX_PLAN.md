@@ -84,8 +84,9 @@ Ruang lingkup: perbaikan UI/UX pada aplikasi yang sudah ada. Tidak menambah modu
 ## Catatan implementasi
 
 - 4.3 Edit nama master memakai endpoint upsert-by-code yang sudah ada (tercatat audit). Karena endpoint itu juga mengaktifkan item, tombol Edit hanya muncul untuk item aktif — tidak ada perubahan API.
-- 4.6 File modul satu-baris (`publish/service.ts`, `workers/public-view.ts`, `photo/*.ts`) belum diformat ulang agar tidak menyentuh logika bisnis di PR UI.
+- 4.6 File modul satu-baris diformat ulang dengan Prettier (print width 140). Diverifikasi formatting-only: output JS terkompilasi identik, kecuali tanda kurung redundan yang ditambahkan Prettier.
 - D2: galeri `/dev/ui` (data fiktif) aktif hanya saat `NODE_ENV !== "production"`; proxy membiarkan `/dev/*` lewat tanpa login hanya di development.
+- Bug backend yang ditemukan: upload foto non-profil (Seluruh badan/Pelatihan/Lainnya) mereset `content_status`, mis. dari PUBLISHED ke APPROVED. Diperbaiki: hanya foto PROFILE yang menghitung ulang status (`src/modules/photo/content-status.ts`, dengan test).
 - Ditemukan saat cek visual: aturan dasar di `globals.css` di luar `@layer base` membuat `text-xs` pada semua tombol diabaikan — sudah diperbaiki.
 
 ## Di luar ruang lingkup

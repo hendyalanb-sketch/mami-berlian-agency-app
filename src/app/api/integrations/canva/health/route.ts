@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 async function runHealth(userId: string, activate: boolean) {
   if (!db) return { status: 503, body: { error: "DATABASE_NOT_CONFIGURED" } };
   const [template] = await db.select().from(canvaTemplates).where(eq(canvaTemplates.code, "MB-01")).limit(1);
-  const designId = process.env.CANVA_MB01_WORKING_DESIGN_ID ?? template?.canvaTemplateId;
+  const designId = template?.canvaTemplateId ?? process.env.CANVA_MB01_WORKING_DESIGN_ID;
   if (!template || !designId) return { status: 503, body: { error: "MB01_NOT_CONFIGURED" } };
 
   try {

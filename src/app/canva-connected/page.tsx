@@ -14,7 +14,7 @@ export default function CanvaConnectedPage() {
           <p className="mt-5 text-xs font-black tracking-[0.2em] text-brand-pink">MAMI BERLIAN</p>
           <h1 className="mt-2 text-2xl font-black text-brand-navy">Canva berhasil terhubung</h1>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Otorisasi Canva sudah disimpan dengan aman. Kembali ke aplikasi untuk memeriksa template MB-01A dan MB-01B.
+            Otorisasi Canva sudah disimpan dengan aman. Kembali ke aplikasi untuk memeriksa template MB-01A/B dan MB-02A/B.
           </p>
           <Link
             href="/integrasi?canva=connected"

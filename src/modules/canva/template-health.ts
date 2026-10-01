@@ -1,4 +1,4 @@
-export const CANVA_WORKER_TEMPLATE_CODES = ["MB-01A", "MB-01B"] as const;
+export const CANVA_WORKER_TEMPLATE_CODES = ["MB-01A", "MB-01B", "MB-02A", "MB-02B"] as const;
 export type CanvaWorkerTemplateCode = (typeof CANVA_WORKER_TEMPLATE_CODES)[number];
 
 type FieldType = "image" | "text";
@@ -34,6 +34,14 @@ export const MB01B_REQUIRED_FIELDS = [
   "WORKER_DOCUMENT_STATUS",
 ] as const;
 
+/** Flyer katalog "Ready To Interview" (MB-02A biru, MB-02B pink) — sama dengan desain SAMPUL PEKERJA. */
+export const MB02_REQUIRED_FIELDS = [
+  "WORKER_PHOTO",
+  "WORKER_NAME",
+  "WORKER_POSITION",
+  "WORKER_PLACEMENT",
+] as const;
+
 function expectedTypes(fields: readonly string[]) {
   return Object.fromEntries(fields.map((field) => [field, field === "WORKER_PHOTO" ? "image" : "text"])) as Record<string, FieldType>;
 }
@@ -49,7 +57,24 @@ export const WORKER_TEMPLATE_CONTRACTS: Record<CanvaWorkerTemplateCode, Template
     requiredFields: MB01B_REQUIRED_FIELDS,
     expectedTypes: expectedTypes(MB01B_REQUIRED_FIELDS),
   },
+  "MB-02A": {
+    name: "MB-02A — Ready To Interview (Biru)",
+    requiredFields: MB02_REQUIRED_FIELDS,
+    expectedTypes: expectedTypes(MB02_REQUIRED_FIELDS),
+  },
+  "MB-02B": {
+    name: "MB-02B — Ready To Interview (Pink)",
+    requiredFields: MB02_REQUIRED_FIELDS,
+    expectedTypes: expectedTypes(MB02_REQUIRED_FIELDS),
+  },
 };
+
+/** Kategori yang memakai flyer pink (MB-02B); lainnya biru (MB-02A) — mengikuti pola katalog yang sudah ada. */
+const PINK_FLYER_CATEGORIES = new Set(["ART_MOMONG", "BABYSITTER"]);
+
+export function recommendedWorkerTemplateCode(categoryCode: string | null | undefined): CanvaWorkerTemplateCode {
+  return PINK_FLYER_CATEGORIES.has(String(categoryCode ?? "").toUpperCase()) ? "MB-02B" : "MB-02A";
+}
 
 export function isWorkerTemplateCode(value: string): value is CanvaWorkerTemplateCode {
   return (CANVA_WORKER_TEMPLATE_CODES as readonly string[]).includes(value);

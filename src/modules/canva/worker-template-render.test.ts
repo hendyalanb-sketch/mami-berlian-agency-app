@@ -51,4 +51,37 @@ describe("worker Canva render payload", () => {
     });
     expect(result.WORKER_INTRO_QUOTE).toEqual({ type: "text", text: "x".repeat(120) });
   });
+
+  it("builds the MB-02 Ready To Interview flyer in uppercase like the catalog design", () => {
+    for (const templateCode of ["MB-02A", "MB-02B"] as const) {
+      const result = buildWorkerTemplateAutofill({ templateCode, assetId: "MA_TEST", view, bridge });
+      expect(result).toEqual({
+        WORKER_PHOTO: { type: "image", asset_id: "MA_TEST" },
+        WORKER_NAME: { type: "text", text: "NILAM ANGGRAINI" },
+        WORKER_POSITION: { type: "text", text: "ART MOMONG ANAK" },
+        WORKER_PLACEMENT: { type: "text", text: "Penempatan SURABAYA" },
+      });
+    }
+  });
+
+  it("falls back to the category and shortens long names word by word", () => {
+    const result = buildWorkerTemplateAutofill({ templateCode: "MB-02B", assetId: "MA_TEST", view: { ...view, name: "Wiwik Erna Wati Kusumaningrum" }, bridge: { ...bridge, worker_specialty: "" } });
+    expect(result.WORKER_NAME).toEqual({ type: "text", text: "WIWIK ERNA WATI" });
+    expect(result.WORKER_POSITION).toEqual({ type: "text", text: "ART MOMONG" });
+  });
+
+  it("keeps flyer text within one-line limits measured in Canva", () => {
+    const long = buildWorkerTemplateAutofill({
+      templateCode: "MB-02A",
+      assetId: "MA_TEST",
+      view: { ...view, name: "Siti Nurhaliza Rahmawati", placement: "Seluruh Indonesia (Luar Jawa)" },
+      bridge: { ...bridge, worker_specialty: "ART Momong Anak & Lansia Berpengalaman" },
+    });
+    expect(long.WORKER_NAME).toEqual({ type: "text", text: "SITI NURHALIZA" });
+    expect(long.WORKER_POSITION).toEqual({ type: "text", text: "ART MOMONG ANAK & LANSIA" });
+    expect(long.WORKER_PLACEMENT).toEqual({ type: "text", text: "SELURUH INDONESIA" });
+    const known = buildWorkerTemplateAutofill({ templateCode: "MB-02B", assetId: "MA_TEST", view: { ...view, placement: "Seluruh Indonesia" }, bridge: { ...bridge, worker_specialty: "ART Momong (Anak & Lansia)" } });
+    expect(known.WORKER_POSITION).toEqual({ type: "text", text: "ART MOMONG (ANAK & LANSIA)" });
+    expect(known.WORKER_PLACEMENT).toEqual({ type: "text", text: "Penempatan SELURUH INDONESIA" });
+  });
 });

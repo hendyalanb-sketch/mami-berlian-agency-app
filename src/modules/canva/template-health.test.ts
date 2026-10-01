@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluateTemplateDatasetForCode, MB01A_REQUIRED_FIELDS, MB01B_REQUIRED_FIELDS } from "./template-health";
+import { evaluateTemplateDatasetForCode, MB01A_REQUIRED_FIELDS, MB01B_REQUIRED_FIELDS, recommendedWorkerTemplateCode } from "./template-health";
 
 function dataset(fields: readonly string[]) {
   return Object.fromEntries(fields.map((field) => [field, { type: field === "WORKER_PHOTO" ? "image" : "text" }]));
@@ -26,5 +26,15 @@ describe("worker Canva template health", () => {
     expect(health.valid).toBe(false);
     expect(health.wrongType).toContain("WORKER_NAME");
     expect(health.missing).toContain("WORKER_PROFILE_LINE");
+  });
+});
+
+describe("recommendedWorkerTemplateCode", () => {
+  it("uses the pink flyer for momong/babysitter and blue for the rest", () => {
+    expect(recommendedWorkerTemplateCode("ART_MOMONG")).toBe("MB-02B");
+    expect(recommendedWorkerTemplateCode("BABYSITTER")).toBe("MB-02B");
+    expect(recommendedWorkerTemplateCode("ART")).toBe("MB-02A");
+    expect(recommendedWorkerTemplateCode("SUSTER_LANSIA")).toBe("MB-02A");
+    expect(recommendedWorkerTemplateCode(undefined)).toBe("MB-02A");
   });
 });

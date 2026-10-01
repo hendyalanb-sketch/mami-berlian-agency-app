@@ -30,7 +30,7 @@ const fixture: EnrichmentPayload = {
   readiness: { status: "INCOMPLETE", score: 43, missing: ["experience", "placement", "salary", "profile_photo"], checks: { category: true, skills: true, publication_consent: false } },
 };
 const fullChecks = { category: true, experience: true, skills: true, placement: true, salary: true, profile_photo: true, publication_consent: true };
-const templates = [{ code: "MB-01A", name: "MB-01A — Personal", version: "v1", designId: "DEMO" }, { code: "MB-01B", name: "MB-01B — Promo", version: "v1", designId: "DEMO" }];
+const templates = [{ code: "MB-01A", name: "MB-01A — Personal", version: "v1", designId: "DEMO" }, { code: "MB-02B", name: "MB-02B — Ready To Interview (Pink)", version: "v1", designId: "DEMO" }, { code: "MB-01B", name: "MB-01B — Promo", version: "v1", designId: "DEMO" }];
 const channels = [{ code: "INSTAGRAM", name: "Instagram" }, { code: "TIKTOK", name: "TikTok" }];
 const actionBase = { workerRegister: "DEMO-001", readinessScore: 100, missing: [], isAdmin: true, canGenerate: true, canPublish: true, generationConfigured: true, exportConfigured: true, publishChannels: channels, templateOptions: templates };
 

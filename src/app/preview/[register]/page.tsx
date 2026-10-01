@@ -12,6 +12,7 @@ import { canEditWorkers, canGenerateContent, isAdmin } from "@/lib/permissions";
 import { CONTENT_STATUS, statusInfo } from "@/lib/status-labels";
 import { ContentBridgeService, type BridgeRecord } from "@/modules/bridge/content-bridge-service";
 import { getCanvaRuntimeState } from "@/modules/canva/runtime-state";
+import { recommendedWorkerTemplateCode } from "@/modules/canva/template-health";
 import { readinessFromBridge } from "@/modules/enrichment/serialization";
 import { getGoogleAccessToken, GoogleConnectionError } from "@/modules/google/oauth-token-service";
 import { getRuntimeCapabilities } from "@/modules/integrations/capabilities";
@@ -121,6 +122,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ regist
         publishedChannel={bridge?.published_channel ? String(bridge.published_channel) : null}
         publishChannels={publishChannels}
         templateOptions={canva.templates}
+        recommendedTemplate={recommendedWorkerTemplateCode(bridge?.category ? String(bridge.category) : null)}
       /></div>}
     </div>
   </div>;

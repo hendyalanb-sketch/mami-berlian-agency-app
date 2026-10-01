@@ -39,7 +39,13 @@ export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   const admin = isAdmin(session?.user.role);
   const capabilities = getRuntimeCapabilities();
-  const stats = await loadDashboard().catch(() => null);
+  // null = Neon belum dikonfigurasi; loadFailed = query gagal (jangan ditampilkan sebagai minggu kosong).
+  const { stats, loadFailed } = await loadDashboard()
+    .then((data) => ({ stats: data, loadFailed: false }))
+    .catch((error: unknown) => {
+      console.error("Dashboard query failed", error);
+      return { stats: null, loadFailed: true };
+    });
   const setupIncomplete = !capabilities.database.configured || !capabilities.registerRead.configured || !capabilities.enrichment.configured;
   const firstName = session?.user.name?.split(/\s+/)[0];
 
@@ -60,13 +66,17 @@ export default async function DashboardPage() {
       ? <Alert tone="warning" title="Aplikasi belum selesai dikonfigurasi."><p>Beberapa koneksi (Neon, Google, atau Canva) belum siap, jadi pencarian dan generate belum bisa dipakai.</p><Link href="/integrasi" className="mt-1 inline-flex min-h-8 items-center gap-1 font-bold underline underline-offset-2">Selesaikan di Integrasi <ArrowRight size={14} aria-hidden /></Link></Alert>
       : <Alert tone="warning" title="Aplikasi belum siap dipakai.">Koneksi aplikasi sedang disiapkan. Hubungi Admin.</Alert>)}
 
+    {loadFailed && <Alert tone="error" title="Ringkasan dashboard gagal dimuat dari database."><p>Data tidak hilang; koneksi ke Neon sedang bermasalah. Muat ulang halaman beberapa saat lagi. Jika berulang, {admin ? "periksa status Neon di menu Integrasi." : "hubungi Admin."}</p>{admin && <Link href="/integrasi" className="mt-1 inline-flex min-h-8 items-center gap-1 font-bold underline underline-offset-2">Buka Integrasi <ArrowRight size={14} aria-hidden /></Link>}</Alert>}
+
     {stats && <section aria-label="Ringkasan" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {metrics.map((metric) => <Card key={metric.label}><CardContent className="p-4 sm:p-5"><p className="text-xs font-medium text-slate-500">{metric.label}</p><p className={`mt-2 text-2xl font-bold ${metric.alert ? "text-red-600" : "text-brand-navy"}`}>{metric.value}</p><p className="mt-1 text-[11px] text-slate-400">{metric.hint}</p></CardContent></Card>)}
     </section>}
 
     <section className="grid gap-4 lg:grid-cols-[1.4fr_.6fr]">
       <Card><CardHeader className="flex flex-row items-center justify-between gap-3"><CardTitle>Generate terbaru</CardTitle><Link href="/konten" className="-my-2 inline-flex min-h-10 items-center px-2 text-xs font-bold text-brand-navy hover:underline">Lihat semua</Link></CardHeader><CardContent>
-        {!stats || stats.recent.length === 0
+        {loadFailed
+          ? <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">Riwayat generate tidak bisa dimuat. Lihat pesan di atas.</p>
+          : !stats || stats.recent.length === 0
           ? <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-5"><p className="font-semibold text-slate-800">Belum ada desain minggu ini</p><p className="mt-1 text-sm text-slate-500">Mulai dari mencari pekerja, lengkapi data & fotonya, lalu Generate.</p><Link href="/pekerja" className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-brand-navy">Cari pekerja <ArrowRight size={16} aria-hidden /></Link></div>
           : <ul className="space-y-2">{stats.recent.map((job) => <li key={job.id}><Link href={`/preview/${encodeURIComponent(job.workerRegister)}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 p-3 hover:bg-slate-50"><span className="min-w-0"><span className="block text-sm font-bold text-brand-navy">{job.workerRegister}</span><span className="block text-xs text-slate-500">{job.templateCode} • {job.createdAt.toLocaleString("id-ID", { timeZone: "Asia/Jakarta", dateStyle: "medium", timeStyle: "short" })}</span></span><StatusBadge status={statusInfo(JOB_STATUS, job.status)} /></Link></li>)}</ul>}
       </CardContent></Card>

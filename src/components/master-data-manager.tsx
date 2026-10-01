@@ -28,23 +28,28 @@ export function MasterDataManager({ enabled }: { enabled: boolean }) {
   const [mapping, setMapping] = useState({ mappingType: "CATEGORY", sourceValue: "", targetCode: "" });
   const [rate, setRate] = useState({ categoryCode: "", experienceCode: "", salaryZoneCode: "", salaryMin: "", salaryMax: "", effectiveFrom: new Date().toISOString().slice(0, 10), version: "" });
 
-  async function load() {
+  useEffect(() => {
     if (!enabled) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/master", { cache: "no-store" });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "MASTER_READ_FAILED");
-      setData(body);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "MASTER_READ_FAILED");
-    } finally {
-      setLoading(false);
-    }
-  }
+    const controller = new AbortController();
 
-  useEffect(() => { void load(); }, [enabled]);
+    fetch("/api/master", { cache: "no-store", signal: controller.signal })
+      .then(async (response) => {
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error ?? "MASTER_READ_FAILED");
+        return body as Snapshot;
+      })
+      .then((snapshot) => {
+        if (!controller.signal.aborted) setData(snapshot);
+      })
+      .catch((cause) => {
+        if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : "MASTER_READ_FAILED");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [enabled]);
 
   const count = useMemo(() => data ? data.categories.length + data.skills.length + data.experiences.length + data.zones.length + data.placements.length : 0, [data]);
 

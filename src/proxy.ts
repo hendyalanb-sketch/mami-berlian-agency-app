@@ -2,6 +2,8 @@ import { getToken } from "next-auth/jwt";
 import { NextResponse, type NextRequest } from "next/server";
 import { isAdmin } from "@/lib/permissions";
 
+const ADMIN_PATHS = ["/master", "/integrasi", "/audit", "/pengaturan"];
+
 export async function proxy(request: NextRequest) {
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
   if (!token) {
@@ -10,7 +12,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(login);
   }
 
-  if ((request.nextUrl.pathname.startsWith("/master") || request.nextUrl.pathname.startsWith("/integrasi")) && !isAdmin(token.role)) {
+  if (ADMIN_PATHS.some((path) => request.nextUrl.pathname.startsWith(path)) && !isAdmin(token.role)) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

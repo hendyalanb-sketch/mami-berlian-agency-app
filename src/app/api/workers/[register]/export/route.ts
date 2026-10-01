@@ -58,7 +58,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ re
 
     const download = await fetch(downloadUrl, { cache: "no-store" });
     if (!download.ok) throw new Error(`CANVA_EXPORT_DOWNLOAD_FAILED:${download.status}`);
-    const fileName = `${safeFileSegment(worker.workerRegister)} - ${safeFileSegment(worker.name || "PEKERJA")} - MB01.png`;
+    const templateCode = safeFileSegment(String(before.canva_template_key ?? "MB-01"));
+    const fileName = `${safeFileSegment(worker.workerRegister)} - ${safeFileSegment(worker.name || "PEKERJA")} - ${templateCode}.png`;
     const archived = await uploadImageToDrive({
       accessToken: googleAccessToken,
       folderId: storage.exportFolderId,
@@ -84,10 +85,10 @@ export async function POST(_request: Request, { params }: { params: Promise<{ re
       entityId: archived.id,
       before: { contentStatus: currentStatus, exportDriveId: before.export_drive_id ?? null },
       after: { contentStatus: nextStatus, exportDriveId: archived.id, fileName },
-      metadata: { canvaDesignId: before.canva_design_id, canvaExportJobId: exportJob.job.id },
+      metadata: { canvaDesignId: before.canva_design_id, canvaTemplateKey: before.canva_template_key, canvaExportJobId: exportJob.job.id },
     });
 
-    return NextResponse.json({ ok: true, contentStatus: nextStatus, export: archived, fileName });
+    return NextResponse.json({ ok: true, contentStatus: nextStatus, export: archived, fileName, templateCode: before.canva_template_key ?? null });
   } catch (error) {
     const code = error instanceof CanvaConnectionError || error instanceof GoogleConnectionError
       ? error.code

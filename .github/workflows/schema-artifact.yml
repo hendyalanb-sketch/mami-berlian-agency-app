@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   generate-schema:
@@ -15,6 +15,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'push' && github.ref_name || github.event.pull_request.head.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -25,6 +27,18 @@ jobs:
         env:
           # drizzle-kit generate only parses schema/config; this placeholder is never contacted.
           DATABASE_URL: postgresql://migration_artifact:artifact_only@127.0.0.1:5432/mba_content_ops_artifact
+      - name: Version migration on implementation branch
+        if: github.event_name == 'push'
+        run: |
+          if [ -n "$(git status --porcelain -- drizzle)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add drizzle
+            git commit -m "Generate Drizzle migration artifact"
+            git push origin HEAD:${GITHUB_REF_NAME}
+          else
+            echo "No schema drift detected."
+          fi
       - name: Upload migration artifact
         uses: actions/upload-artifact@v4
         with:

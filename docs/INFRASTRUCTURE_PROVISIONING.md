@@ -14,32 +14,54 @@ Content Operations v3 MUST use dedicated infrastructure. Do not reuse or repurpo
 
 ## Dedicated Vercel Target
 - Project name: `mami-berlian-content-ops`
+- Project ID: `prj_FyXNhV1te30NgPRLQhSd7U1lwOMA`
 - Team: `Hendy Alan Budisaputra's projects`
 - Team ID: `team_lLFdnuYqmlrytUMLwPeDh0aZ`
 - Git provider: GitHub
 - Git repository: `hendyalanb-sketch/mami-berlian-agency-app`
-- Initial staging/preview source branch: `content-ops-v3`
+- Production-tracked implementation branch during staging: `content-ops-v3`
+- Production alias: `mami-berlian-content-ops.vercel.app`
+- First correct deployment from `content-ops-v3`: READY
 - Do NOT reuse `web-mami-berlian2026` or another existing Vercel project.
 
 Recommended release flow:
-1. Connect the new Vercel project to the existing GitHub repository.
-2. Deploy `content-ops-v3` as Preview/Staging first.
-3. Keep Production gated until staging acceptance tests pass.
-4. Merge to `main` only after Neon migration, OAuth callbacks, integration health, E2E, mobile QA, and smoke tests pass.
+1. Continue validating `content-ops-v3` on the dedicated Vercel project.
+2. Keep business integrations gated until staging acceptance tests pass.
+3. Merge to `main` only after Neon migration, OAuth callbacks, integration health, E2E, mobile QA, and smoke tests pass.
 
 ## Dedicated Neon Target
 - Project name: `mami-berlian-content-ops-db`
+- Project ID: `empty-tree-42677156`
+- Region: `aws-ap-southeast-1` (Singapore)
+- Production branch: `production` (`br-solitary-salad-azl3jo27`)
+- Staging branch: `staging` (`br-muddy-math-aztg4tvi`)
+- Default database: `neondb`
 - Purpose: exclusive Lakebase Postgres database for Content Operations v3.
 - Do NOT attach the app to an unrelated existing Neon project.
-- Use a dedicated default database/branch and retain a separate preview/staging branch if environment isolation is needed.
 
-Database bootstrap order after the project exists:
-1. Obtain `DATABASE_URL` from the dedicated Neon project.
-2. Configure the Vercel Preview environment first.
-3. Run `npm run db:migrate` against the staging/preview target.
-4. Run `npm run db:seed`.
-5. Verify tables/schema and application health.
-6. Only after staging acceptance passes, configure Production database/environment.
+### Staging database state
+- Drizzle schema migration applied successfully to `staging` only.
+- Production branch remains unmigrated/empty until staging acceptance passes.
+- Baseline master seed applied successfully to `staging`.
+- Verified staging seed counts:
+  - 7 worker categories
+  - 13 skills
+  - 5 experience levels
+  - 3 salary zones
+  - 11 placement options
+  - 6 publish channels
+  - 6 register mappings
+  - 15 salary rates
+  - 1 Canva template metadata row
+  - 1 default CTA profile
+
+Database bootstrap order:
+1. Use the dedicated Neon staging branch connection string for non-production validation.
+2. Configure Vercel environment securely; never commit connection strings.
+3. Verify application health and authenticated DB access.
+4. Add the initial Admin account explicitly.
+5. Complete OAuth and integration configuration.
+6. Only after staging acceptance passes, migrate/seed Production.
 
 ## Required Runtime Environment Keys
 Names are sourced from `.env.example`; secret values MUST never be committed.
@@ -72,31 +94,33 @@ Names are sourced from `.env.example`; secret values MUST never be committed.
 - `APP_URL`
 
 ## Callback Rules
-After Vercel provides the actual deployment hostname, configure callbacks using that hostname:
-- Google: `https://<app-host>/api/auth/callback/google`
-- Canva: `https://<app-host>/api/integrations/canva/callback`
-
-Do not finalize OAuth callback values before the dedicated Vercel project/hostname exists.
+Dedicated application hostname:
+- App: `https://mami-berlian-content-ops.vercel.app`
+- Google callback: `https://mami-berlian-content-ops.vercel.app/api/auth/callback/google`
+- Canva callback: `https://mami-berlian-content-ops.vercel.app/api/integrations/canva/callback`
 
 ## Provisioning Gate
-The implementation is **code-ready but not production-ready** until all of the following are true:
-- [ ] Dedicated Neon project exists.
-- [ ] Dedicated Vercel project exists.
-- [ ] Vercel project is connected to the correct GitHub repository.
-- [ ] Preview deployment uses `content-ops-v3`.
-- [ ] Vercel Preview `DATABASE_URL` points only to the dedicated Neon project/branch.
-- [ ] Drizzle migration succeeds.
-- [ ] Seed succeeds.
+- [x] Dedicated Neon project exists.
+- [x] Dedicated Vercel project exists.
+- [x] Vercel project is connected to the correct GitHub repository.
+- [x] Vercel deployment uses `content-ops-v3`.
+- [x] Dedicated Neon staging branch exists.
+- [x] Drizzle migration succeeds on staging.
+- [x] Baseline seed succeeds on staging.
+- [ ] Vercel runtime `DATABASE_URL` securely points to the dedicated Neon environment.
+- [ ] Initial Admin email is explicitly configured.
 - [ ] Google OAuth callback is valid.
 - [ ] Canva OAuth callback is valid.
 - [ ] Integration health is green.
 - [ ] MB-01 dataset health passes.
 - [ ] End-to-end flow passes: Register read-only → enrichment → photo → approve → Canva → Drive export → publish.
 - [ ] Mobile QA 360/390/412 px passes.
+- [ ] Production Neon migration/seed is approved and applied.
 - [ ] Production smoke test passes before PR merge/release.
 
 ## Safety
 - Never write to the Register source sheet.
 - Never commit credentials or connection strings.
 - Never reuse unrelated Neon/Vercel projects just to unblock deployment.
+- Never migrate the production Neon branch before staging validation is complete.
 - Never merge `content-ops-v3` into `main` solely because CI is green; runtime provisioning and staging acceptance remain mandatory.

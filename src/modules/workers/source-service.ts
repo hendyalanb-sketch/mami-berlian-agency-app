@@ -1,8 +1,14 @@
 import { readValues } from "@/modules/google/sheets-rest";
+import { canonicalizeWorkerRegister, resolveLegacyCategory } from "./register-normalization";
 
 export type RegisterWorker = {
   sourceRow: number;
   workerRegister: string;
+  workerRegisterRaw: string;
+  legacyCategoryCode: string | null;
+  categoryHint: "ART" | "BABYSITTER" | "SUSTER_LANSIA" | null;
+  categoryMappingRequired: boolean;
+  infalHint: boolean;
   appliedAt: string;
   name: string;
   birth: string;
@@ -34,6 +40,32 @@ const COL = {
 function cell(row: string[], index: number) { return row[index]?.trim() ?? ""; }
 function normalize(value: string) { return value.normalize("NFKD").toLocaleLowerCase("id-ID").trim(); }
 
+function toWorker(row: string[], sourceRow: number): RegisterWorker {
+  const workerRegisterRaw = row[COL.workerRegister] ?? "";
+  const workerRegister = canonicalizeWorkerRegister(workerRegisterRaw);
+  const category = resolveLegacyCategory(workerRegister);
+  return {
+    sourceRow,
+    workerRegister,
+    workerRegisterRaw,
+    legacyCategoryCode: category.sourceCode,
+    categoryHint: category.targetCode,
+    categoryMappingRequired: Boolean(category.sourceCode && !category.mapped),
+    infalHint: category.infalHint,
+    appliedAt: cell(row, COL.appliedAt),
+    name: cell(row, COL.name),
+    birth: cell(row, COL.birth),
+    age: cell(row, COL.age),
+    origin: cell(row, COL.origin),
+    height: cell(row, COL.height),
+    weight: cell(row, COL.weight),
+    education: cell(row, COL.education),
+    lastWork: cell(row, COL.lastWork),
+    status: cell(row, COL.status),
+    recruiter: cell(row, COL.recruiter),
+  };
+}
+
 export class WorkerSourceService {
   constructor(private readonly input: { spreadsheetId: string; accessToken: string; sheetName?: string }) {}
 
@@ -50,21 +82,7 @@ export class WorkerSourceService {
         if (matches.length >= limit) return;
         const searchable = [cell(row, COL.workerRegister), cell(row, COL.name), cell(row, COL.origin), cell(row, COL.status)].map(normalize).join(" ");
         if (!searchable.includes(needle)) return;
-        matches.push({
-          sourceRow: start + offset,
-          workerRegister: cell(row, COL.workerRegister),
-          appliedAt: cell(row, COL.appliedAt),
-          name: cell(row, COL.name),
-          birth: cell(row, COL.birth),
-          age: cell(row, COL.age),
-          origin: cell(row, COL.origin),
-          height: cell(row, COL.height),
-          weight: cell(row, COL.weight),
-          education: cell(row, COL.education),
-          lastWork: cell(row, COL.lastWork),
-          status: cell(row, COL.status),
-          recruiter: cell(row, COL.recruiter),
-        });
+        matches.push(toWorker(row, start + offset));
       });
       if (values.length < end - start + 1) break;
     }

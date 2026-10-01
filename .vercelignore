@@ -1,4 +1,4 @@
-api/
+/api/
 DB_SCHEMA.sql
 SPEC.md
 API_CONTRACT.md

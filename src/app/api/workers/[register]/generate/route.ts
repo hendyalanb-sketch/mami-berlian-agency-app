@@ -40,7 +40,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ re
     const { register } = await params;
     workerRegister = canonicalizeWorkerRegister(decodeURIComponent(register));
     const [template] = await db.select().from(canvaTemplates).where(eq(canvaTemplates.code, "MB-01")).limit(1);
-    const designId = process.env.CANVA_MB01_WORKING_DESIGN_ID ?? template?.canvaTemplateId;
+    const designId = template?.canvaTemplateId ?? process.env.CANVA_MB01_WORKING_DESIGN_ID;
     if (!template || !template.isActive || !designId) return NextResponse.json({ error: "MB01_NOT_ACTIVE" }, { status: 409 });
 
     const googleAccessToken = await getGoogleAccessToken(session.user.id);

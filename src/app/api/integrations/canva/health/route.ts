@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { db } from "@/db/client";
@@ -7,32 +7,62 @@ import { authOptions } from "@/lib/auth";
 import { isAdmin } from "@/lib/permissions";
 import { getCanvaAccessToken, CanvaConnectionError } from "@/modules/canva/oauth-token-service";
 import { getCanvaDesignDataset, CanvaApiError } from "@/modules/canva/rest";
-import { evaluateTemplateDataset } from "@/modules/canva/template-health";
+import { CANVA_WORKER_TEMPLATE_CODES, evaluateTemplateDatasetForCode, isWorkerTemplateCode } from "@/modules/canva/template-health";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 async function runHealth(userId: string, activate: boolean) {
   if (!db) return { status: 503, body: { error: "DATABASE_NOT_CONFIGURED" } };
-  const [template] = await db.select().from(canvaTemplates).where(eq(canvaTemplates.code, "MB-01")).limit(1);
-  const designId = template?.canvaTemplateId ?? process.env.CANVA_MB01_WORKING_DESIGN_ID;
-  if (!template || !designId) return { status: 503, body: { error: "MB01_NOT_CONFIGURED" } };
+
+  const templates = await db.select().from(canvaTemplates).where(inArray(canvaTemplates.code, [...CANVA_WORKER_TEMPLATE_CODES]));
+  if (!templates.length) return { status: 503, body: { error: "WORKER_TEMPLATES_NOT_CONFIGURED" } };
 
   try {
     const accessToken = await getCanvaAccessToken(userId);
-    const dataset = await getCanvaDesignDataset({ accessToken, designId });
-    const health = evaluateTemplateDataset(dataset);
-    const issues = [...health.missing, ...health.wrongType.map((field) => `${field}:TYPE`)];
-    await db.insert(integrationHealth).values({
-      provider: "CANVA_MB01",
-      status: health.valid ? "HEALTHY" : "UNHEALTHY",
-      message: health.valid ? "MB-01 dataset lengkap" : `Issues: ${issues.join(", ")}`,
-      metadataJson: { designId, fields: Object.keys(dataset), missing: health.missing, wrongType: health.wrongType },
-    });
-    if (activate) {
-      await db.update(canvaTemplates).set({ canvaTemplateId: designId, isActive: health.valid, updatedAt: new Date() }).where(eq(canvaTemplates.id, template.id));
+    const results = [] as Array<{
+      code: string;
+      name: string;
+      designId: string;
+      valid: boolean;
+      missing: string[];
+      wrongType: string[];
+      fields: string[];
+      active: boolean;
+    }>;
+
+    for (const template of templates) {
+      if (!isWorkerTemplateCode(template.code)) continue;
+      const designId = template.canvaTemplateId;
+      const dataset = await getCanvaDesignDataset({ accessToken, designId });
+      const health = evaluateTemplateDatasetForCode(template.code, dataset);
+      const issues = [...health.missing, ...health.wrongType.map((field) => `${field}:TYPE`)];
+
+      await db.insert(integrationHealth).values({
+        provider: `CANVA_${template.code.replace("-", "")}`,
+        status: health.valid ? "HEALTHY" : "UNHEALTHY",
+        message: health.valid ? `${template.code} dataset lengkap` : `Issues: ${issues.join(", ")}`,
+        metadataJson: { templateCode: template.code, designId, fields: Object.keys(dataset), missing: health.missing, wrongType: health.wrongType },
+      });
+
+      if (activate) {
+        await db.update(canvaTemplates).set({ isActive: health.valid, updatedAt: new Date() }).where(inArray(canvaTemplates.id, [template.id]));
+      }
+
+      results.push({
+        code: template.code,
+        name: template.name,
+        designId,
+        fields: Object.keys(dataset),
+        ...health,
+        active: activate ? health.valid : template.isActive,
+      });
     }
-    return { status: health.valid ? 200 : 409, body: { designId, dataset, ...health, active: activate ? health.valid : template.isActive } };
+
+    const valid = results.length > 0 && results.every((item) => item.valid);
+    const missing = results.flatMap((item) => item.missing.map((field) => `${item.code}:${field}`));
+    const wrongType = results.flatMap((item) => item.wrongType.map((field) => `${item.code}:${field}`));
+    return { status: valid ? 200 : 409, body: { valid, missing, wrongType, templates: results } };
   } catch (error) {
     const code = error instanceof CanvaConnectionError ? error.code : error instanceof CanvaApiError ? error.code : "CANVA_HEALTH_FAILED";
     return { status: error instanceof CanvaConnectionError ? 409 : 502, body: { error: code } };

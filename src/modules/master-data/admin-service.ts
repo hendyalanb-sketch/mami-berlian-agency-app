@@ -1,14 +1,24 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
+  canvaTemplates,
+  ctaProfiles,
   experienceLevels,
   placementOptions,
+  publishChannels,
   registerMappings,
   salaryRates,
   salaryZones,
   skills,
   workerCategories,
 } from "@/db/schema";
+import { MB01_REQUIRED_FIELDS } from "@/modules/canva/template-health";
+import {
+  APP_SETTING_KEYS,
+  getDisplayLabels,
+  setDisplayLabel,
+  type DisplaySettingKey,
+} from "@/modules/settings/service";
 
 export class MasterAdminError extends Error {
   constructor(public readonly code: string) {
@@ -27,7 +37,7 @@ export function normalizeMasterCode(value: string) {
 
 export async function getMasterAdminSnapshot() {
   const database = requireDb();
-  const [categories, skillRows, experiences, zones, placements, mappings, rates] = await Promise.all([
+  const [categories, skillRows, experiences, zones, placements, mappings, rates, templates, channels, ctas, displayLabels] = await Promise.all([
     database.select().from(workerCategories),
     database.select().from(skills),
     database.select().from(experienceLevels),
@@ -35,6 +45,10 @@ export async function getMasterAdminSnapshot() {
     database.select().from(placementOptions),
     database.select().from(registerMappings),
     database.select().from(salaryRates),
+    database.select().from(canvaTemplates),
+    database.select().from(publishChannels),
+    database.select().from(ctaProfiles),
+    getDisplayLabels(),
   ]);
 
   const zoneById = new Map(zones.map((row) => [row.id, row]));
@@ -61,6 +75,10 @@ export async function getMasterAdminSnapshot() {
       salaryZoneCode: zoneById.get(row.salaryZoneId)?.code ?? "UNKNOWN",
       salaryZoneName: zoneById.get(row.salaryZoneId)?.name ?? "Unknown",
     })),
+    templates: templates.sort((a, b) => a.code.localeCompare(b.code)),
+    channels: channels.sort((a, b) => a.code.localeCompare(b.code)),
+    ctas: ctas.sort((a, b) => Number(b.isDefault) - Number(a.isDefault) || a.name.localeCompare(b.name)),
+    displayLabels,
   };
 }
 
@@ -133,7 +151,87 @@ export async function createSalaryRate(input: {
   }).returning();
 }
 
-export async function setMasterActive(input: { resource: "category" | "skill" | "experience" | "zone" | "placement" | "mapping" | "rate"; id: string; isActive: boolean }) {
+export async function upsertPublishChannel(input: { code: string; name: string }) {
+  const database = requireDb();
+  const code = normalizeMasterCode(input.code);
+  const name = input.name.trim();
+  if (!code || !name) throw new MasterAdminError("INVALID_CHANNEL_INPUT");
+  return database.insert(publishChannels).values({ code, name, isActive: true }).onConflictDoUpdate({
+    target: publishChannels.code,
+    set: { name, isActive: true, updatedAt: new Date() },
+  }).returning();
+}
+
+export async function upsertCanvaTemplate(input: { code: string; name: string; canvaTemplateId: string; version: string; contentType: string }) {
+  const database = requireDb();
+  const code = normalizeMasterCode(input.code);
+  const name = input.name.trim();
+  const canvaTemplateId = input.canvaTemplateId.trim();
+  const version = input.version.trim();
+  const contentType = normalizeMasterCode(input.contentType);
+  if (!code || !name || !canvaTemplateId || !version || !contentType) throw new MasterAdminError("INVALID_TEMPLATE_INPUT");
+  const requiredFieldsJson = code === "MB_01" || code === "MB-01" ? [...MB01_REQUIRED_FIELDS] : [];
+  const normalizedCode = code === "MB_01" ? "MB-01" : code;
+  return database.insert(canvaTemplates).values({ normalizedCode } as never).catch(async () => {
+    const [existing] = await database.select().from(canvaTemplates).where(eq(canvaTemplates.code, normalizedCode)).limit(1);
+    if (existing) {
+      return database.update(canvaTemplates).set({ name, canvaTemplateId, version, contentType, requiredFieldsJson: requiredFieldsJson.length ? requiredFieldsJson : existing.requiredFieldsJson, isActive: false, updatedAt: new Date() }).where(eq(canvaTemplates.id, existing.id)).returning();
+    }
+    return database.insert(canvaTemplates).values({ code: normalizedCode, name, canvaTemplateId, version, contentType, requiredFieldsJson, isActive: false }).returning();
+  });
+}
+
+export async function upsertCtaProfile(input: {
+  id?: string;
+  name: string;
+  primaryPhone?: string;
+  secondaryPhone?: string;
+  email?: string;
+  website?: string;
+  ctaText?: string;
+  qrTarget?: string;
+  isDefault?: boolean;
+}) {
+  const database = requireDb();
+  const name = input.name.trim();
+  if (!name) throw new MasterAdminError("INVALID_CTA_INPUT");
+  if (input.isDefault) await database.update(ctaProfiles).set({ isDefault: false, updatedAt: new Date() });
+  const values = {
+    name,
+    primaryPhone: input.primaryPhone?.trim() || null,
+    secondaryPhone: input.secondaryPhone?.trim() || null,
+    email: input.email?.trim() || null,
+    website: input.website?.trim() || null,
+    ctaText: input.ctaText?.trim() || null,
+    qrTarget: input.qrTarget?.trim() || null,
+    isDefault: input.isDefault === true,
+    isActive: true,
+    updatedAt: new Date(),
+  };
+  if (input.id) {
+    const [existing] = await database.select().from(ctaProfiles).where(eq(ctaProfiles.id, input.id)).limit(1);
+    if (!existing) throw new MasterAdminError("CTA_NOT_FOUND");
+    return database.update(ctaProfiles).set(values).where(eq(ctaProfiles.id, input.id)).returning();
+  }
+  return database.insert(ctaProfiles).values(values).returning();
+}
+
+export async function updateDisplayLabel(input: { key: DisplaySettingKey; value: string; updatedBy?: string }) {
+  const allowed = new Set<string>([
+    APP_SETTING_KEYS.displayReadyLabel,
+    APP_SETTING_KEYS.displayPlacementLabel,
+    APP_SETTING_KEYS.displaySalaryLabel,
+    APP_SETTING_KEYS.displayFooterText,
+  ]);
+  if (!allowed.has(input.key)) throw new MasterAdminError("INVALID_DISPLAY_KEY");
+  try {
+    await setDisplayLabel(input.key, input.value, input.updatedBy);
+  } catch {
+    throw new MasterAdminError("INVALID_DISPLAY_VALUE");
+  }
+}
+
+export async function setMasterActive(input: { resource: "category" | "skill" | "experience" | "zone" | "placement" | "mapping" | "rate" | "channel" | "cta"; id: string; isActive: boolean }) {
   const database = requireDb();
   const values = { isActive: input.isActive, updatedAt: new Date() };
   if (input.resource === "category") return database.update(workerCategories).set(values).where(eq(workerCategories.id, input.id)).returning();
@@ -142,5 +240,7 @@ export async function setMasterActive(input: { resource: "category" | "skill" | 
   if (input.resource === "zone") return database.update(salaryZones).set(values).where(eq(salaryZones.id, input.id)).returning();
   if (input.resource === "placement") return database.update(placementOptions).set(values).where(eq(placementOptions.id, input.id)).returning();
   if (input.resource === "mapping") return database.update(registerMappings).set(values).where(eq(registerMappings.id, input.id)).returning();
+  if (input.resource === "channel") return database.update(publishChannels).set(values).where(eq(publishChannels.id, input.id)).returning();
+  if (input.resource === "cta") return database.update(ctaProfiles).set(values).where(eq(ctaProfiles.id, input.id)).returning();
   return database.update(salaryRates).set(values).where(eq(salaryRates.id, input.id)).returning();
 }

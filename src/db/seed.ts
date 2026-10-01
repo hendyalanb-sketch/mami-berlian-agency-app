@@ -75,6 +75,26 @@ const canvaTemplateRows = [
     requiredFieldsJson: ["WORKER_PHOTO","WORKER_PROFILE_LINE","WORKER_CODE","WORKER_SKILL_1","WORKER_HEADLINE","WORKER_NAME","WORKER_AVAILABILITY","WORKER_LIVE_IN_STATUS","WORKER_TRAINING_STATUS","WORKER_SKILL_2","WORKER_DOCUMENT_STATUS"],
     isActive: true,
   },
+  // Flyer katalog "Ready To Interview": salinan 1 halaman dari desain SAMPUL PEKERJA (DAHQAVPdSqQ, tidak diubah).
+  // Fail-closed: aktif setelah health check Canva di menu Integrasi.
+  {
+    code: "MB-02A",
+    name: "MB-02A — Ready To Interview (Biru)",
+    canvaTemplateId: process.env.CANVA_MB02A_DESIGN_ID ?? "DAHWz75MkSY",
+    version: "v1",
+    contentType: "WORKER_CATALOG_FLYER",
+    requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_POSITION","WORKER_PLACEMENT"],
+    isActive: false,
+  },
+  {
+    code: "MB-02B",
+    name: "MB-02B — Ready To Interview (Pink)",
+    canvaTemplateId: process.env.CANVA_MB02B_DESIGN_ID ?? "DAHWzxuSgYw",
+    version: "v1",
+    contentType: "WORKER_CATALOG_FLYER",
+    requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_POSITION","WORKER_PLACEMENT"],
+    isActive: false,
+  },
 ] as const;
 
 async function seedInitialAdmin() {

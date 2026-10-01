@@ -12,6 +12,8 @@ import { canEditWorkers, canGenerateContent, isAdmin } from "@/lib/permissions";
 import { CONTENT_STATUS, statusInfo } from "@/lib/status-labels";
 import { ContentBridgeService, type BridgeRecord } from "@/modules/bridge/content-bridge-service";
 import { getCanvaRuntimeState } from "@/modules/canva/runtime-state";
+import { isWorkerTemplateCode, recommendedWorkerTemplateCode } from "@/modules/canva/template-health";
+import { buildWorkerTemplateTextPreview, type RenderTextPreview } from "@/modules/canva/worker-template-render";
 import { readinessFromBridge } from "@/modules/enrichment/serialization";
 import { getGoogleAccessToken, GoogleConnectionError } from "@/modules/google/oauth-token-service";
 import { getRuntimeCapabilities } from "@/modules/integrations/capabilities";
@@ -28,6 +30,7 @@ type Loaded = {
   view: ReturnType<typeof buildPublicWorkerView>;
   readiness: ReturnType<typeof readinessFromBridge>;
   bridge: BridgeRecord | null;
+  experienceLabel: string;
 };
 
 /** Memuat data preview; error dikembalikan sebagai kode agar bisa diterjemahkan ke langkah perbaikan. */
@@ -42,7 +45,8 @@ async function loadPreview(register: string, userId: string): Promise<{ data: Lo
     const bridge = await new ContentBridgeService({ spreadsheetId: process.env.GOOGLE_BRIDGE_SPREADSHEET_ID!, accessToken }).get(worker.workerRegister);
     stage = "master";
     const master = await getWorkerMasterOptions();
-    return { data: { view: buildPublicWorkerView(worker, bridge, master), readiness: readinessFromBridge(bridge), bridge } };
+    const experienceLabel = master.experiences.find((item) => item.code === String(bridge?.experience_level ?? ""))?.name ?? "";
+    return { data: { view: buildPublicWorkerView(worker, bridge, master), readiness: readinessFromBridge(bridge), bridge, experienceLabel } };
   } catch (error) {
     if (error instanceof GoogleConnectionError) return { errorCode: error.code };
     return { errorCode: stage === "register" ? "REGISTER_READ_FAILED" : stage === "bridge" ? "ENRICHMENT_READ_FAILED" : "MASTER_READ_FAILED" };
@@ -69,6 +73,13 @@ export default async function PreviewPage({ params }: { params: Promise<{ regist
   const contentStatus = String(bridge?.content_status ?? data?.readiness.status ?? "INCOMPLETE");
   const approved = Boolean(bridge?.approved_at);
   const view = data?.view ?? null;
+  // Teks akhir per template (sama dengan yang dikirim route generate) untuk dipratinjau sebelum Generate.
+  const renderPreviews: Record<string, RenderTextPreview> = data && bridge
+    ? Object.fromEntries(canva.templates.filter((template) => isWorkerTemplateCode(template.code)).map((template) => [
+      template.code,
+      buildWorkerTemplateTextPreview({ templateCode: template.code as Parameters<typeof buildWorkerTemplateTextPreview>[0]["templateCode"], view: data.view, bridge, experienceLabel: data.experienceLabel }),
+    ]))
+    : {};
   const steps = data ? buildWorkflowSteps({ checks: data.readiness.checks, contentStatus, approved }) : null;
 
   return <div className="mx-auto max-w-5xl space-y-5">
@@ -121,6 +132,8 @@ export default async function PreviewPage({ params }: { params: Promise<{ regist
         publishedChannel={bridge?.published_channel ? String(bridge.published_channel) : null}
         publishChannels={publishChannels}
         templateOptions={canva.templates}
+        renderPreviews={renderPreviews}
+        recommendedTemplate={recommendedWorkerTemplateCode(bridge?.category ? String(bridge.category) : null)}
       /></div>}
     </div>
   </div>;

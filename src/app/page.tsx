@@ -53,7 +53,7 @@ export default async function DashboardPage() {
     { label: "Desain dibuat", value: stats.done, hint: "7 hari terakhir" },
     { label: "Sedang diproses", value: stats.inProgress, hint: "di Canva" },
     { label: "Generate gagal", value: stats.failed, hint: "7 hari terakhir", alert: stats.failed > 0 },
-    { label: "Template siap", value: `${stats.templatesReady}/${CANVA_WORKER_TEMPLATE_CODES.length}`, hint: "MB-01A & MB-01B", alert: stats.templatesReady === 0 },
+    { label: "Template siap", value: `${stats.templatesReady}/${CANVA_WORKER_TEMPLATE_CODES.length}`, hint: "MB-01A/B & MB-02A/B", alert: stats.templatesReady === 0 },
   ] : [];
 
   return <div className="space-y-6">

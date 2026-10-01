@@ -98,6 +98,19 @@ The application flow is implemented in the isolated branch and validated by CI. 
   - All environment variables are scoped to **Production only**. Preview deployments have no env vars, so they run in "not configured" mode.
   - Production `DATABASE_URL` cannot be read (sensitive), but the staging branch shows an ADMIN login while the production branch is empty, so Production most likely points at the Neon **staging** branch. Confirm and decide before go-live (AGENTS.md rule 15).
 
+## Canva templates
+
+| Code | Design | Purpose | Autofill fields |
+|---|---|---|---|
+| MB-01A | `DAHWxdqUjBU` | Worker profile, personal | 9 fields |
+| MB-01B | `DAHWxdxDo0A` | Worker profile, promo | 11 fields |
+| MB-02A | `DAHWz75MkSY` | Catalog flyer "Ready To Interview", blue | `WORKER_PHOTO`, `WORKER_NAME`, `WORKER_POSITION`, `WORKER_PLACEMENT` |
+| MB-02B | `DAHWzxuSgYw` | Catalog flyer "Ready To Interview", pink (ART Momong / Babysitter) | same as MB-02A |
+
+- MB-02A/B are single-page copies of `SAMPUL PEKERJA` (`DAHQAVPdSqQ`, pages 1 and 30). The source design is untouched.
+- Both were registered **inactive** on Neon staging. Run "Periksa Template" in Integrasi to activate them.
+- One-line text limits were measured with a real Autofill: name 16, position 26, placement 28 characters.
+
 ## Remaining provisioning / release blockers
 
 1. ~~Neon target not selected~~ — resolved (see Infrastructure state).

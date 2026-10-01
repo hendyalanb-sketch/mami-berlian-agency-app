@@ -10,6 +10,7 @@ import { WorkflowStepper } from "@/components/workflow-stepper";
 import { CopyPresetsEditor } from "@/components/copy-presets-editor";
 import { CONTENT_STATUS } from "@/lib/status-labels";
 import { COPY_PRESETS_DEFAULTS } from "@/modules/content/copy-presets";
+import { buildWorkerTemplateTextPreview } from "@/modules/canva/worker-template-render";
 import { buildWorkflowSteps } from "@/modules/workflow/steps";
 
 // Galeri komponen dengan data contoh FIKTIF (tanpa PII) untuk cek tampilan 360/390/412 px
@@ -30,9 +31,12 @@ const fixture: EnrichmentPayload = {
   readiness: { status: "INCOMPLETE", score: 43, missing: ["experience", "placement", "salary", "profile_photo"], checks: { category: true, skills: true, publication_consent: false } },
 };
 const fullChecks = { category: true, experience: true, skills: true, placement: true, salary: true, profile_photo: true, publication_consent: true };
-const templates = [{ code: "MB-01A", name: "MB-01A — Personal", version: "v1", designId: "DEMO" }, { code: "MB-01B", name: "MB-01B — Promo", version: "v1", designId: "DEMO" }];
+const templates = [{ code: "MB-01A", name: "MB-01A — Personal", version: "v1", designId: "DEMO" }, { code: "MB-02B", name: "MB-02B — Ready To Interview (Pink)", version: "v1", designId: "DEMO" }, { code: "MB-01B", name: "MB-01B — Promo", version: "v1", designId: "DEMO" }];
 const channels = [{ code: "INSTAGRAM", name: "Instagram" }, { code: "TIKTOK", name: "TikTok" }];
-const actionBase = { workerRegister: "DEMO-001", readinessScore: 100, missing: [], isAdmin: true, canGenerate: true, canPublish: true, generationConfigured: true, exportConfigured: true, publishChannels: channels, templateOptions: templates };
+const demoView = { worker_register: "DEMO-001", name: "Siti Nurhaliza Rahmawati", age: "30 Tahun", origin: "Kota Contoh", category: "ART Momong", skills: ["Masak", "Momong Anak"], placement: "Seluruh Indonesia", salary: "" };
+const demoBridge = { worker_register: "DEMO-001", worker_specialty: "ART Momong (Anak & Lansia)" };
+const renderPreviews = Object.fromEntries((["MB-02B", "MB-01B"] as const).map((code) => [code, buildWorkerTemplateTextPreview({ templateCode: code, view: demoView, bridge: demoBridge, experienceLabel: "Pengalaman" })]));
+const actionBase = { workerRegister: "DEMO-001", readinessScore: 100, missing: [], isAdmin: true, canGenerate: true, canPublish: true, generationConfigured: true, exportConfigured: true, publishChannels: channels, templateOptions: templates, renderPreviews, recommendedTemplate: "MB-02B" };
 
 export function DevUiGallery() {
   return <div className="space-y-8">

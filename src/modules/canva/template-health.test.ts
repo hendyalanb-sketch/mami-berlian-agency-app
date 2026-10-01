@@ -1,16 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { evaluateTemplateDataset, MB01_REQUIRED_FIELDS } from "./template-health";
+import { evaluateTemplateDatasetForCode, MB01A_REQUIRED_FIELDS, MB01B_REQUIRED_FIELDS } from "./template-health";
 
-describe("MB-01 template health", () => {
-  it("requires all fields with the correct data types", () => {
-    const dataset = Object.fromEntries(MB01_REQUIRED_FIELDS.map((field) => [field, { type: field === "WORKER_PHOTO" ? "image" : "text" }]));
-    expect(evaluateTemplateDataset(dataset).valid).toBe(true);
+function dataset(fields: readonly string[]) {
+  return Object.fromEntries(fields.map((field) => [field, { type: field === "WORKER_PHOTO" ? "image" : "text" }]));
+}
+
+describe("worker Canva template health", () => {
+  it("accepts MB-01A when every mapped field exists with the correct type", () => {
+    expect(evaluateTemplateDatasetForCode("MB-01A", dataset(MB01A_REQUIRED_FIELDS)).valid).toBe(true);
   });
 
-  it("rejects missing and mistyped fields", () => {
-    const health = evaluateTemplateDataset({ WORKER_PHOTO: { type: "text" }, WORKER_NAME: { type: "text" } });
+  it("accepts MB-01B when every mapped field exists with the correct type", () => {
+    expect(evaluateTemplateDatasetForCode("MB-01B", dataset(MB01B_REQUIRED_FIELDS)).valid).toBe(true);
+  });
+
+  it("rejects missing and mistyped MB-01A fields", () => {
+    const health = evaluateTemplateDatasetForCode("MB-01A", { WORKER_PHOTO: { type: "text" }, WORKER_HEADLINE: { type: "text" } });
     expect(health.valid).toBe(false);
     expect(health.wrongType).toContain("WORKER_PHOTO");
-    expect(health.missing).toContain("CTA_TEXT");
+    expect(health.missing).toContain("WORKER_INTRO_QUOTE");
+  });
+
+  it("rejects missing and mistyped MB-01B fields", () => {
+    const health = evaluateTemplateDatasetForCode("MB-01B", { WORKER_PHOTO: { type: "image" }, WORKER_NAME: { type: "image" } });
+    expect(health.valid).toBe(false);
+    expect(health.wrongType).toContain("WORKER_NAME");
+    expect(health.missing).toContain("WORKER_PROFILE_LINE");
   });
 });

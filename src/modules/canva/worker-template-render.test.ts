@@ -85,3 +85,14 @@ describe("worker Canva render payload", () => {
     expect(known.WORKER_PLACEMENT).toEqual({ type: "text", text: "Penempatan SELURUH INDONESIA" });
   });
 });
+
+describe("buildWorkerTemplateTextPreview", () => {
+  it("matches the generate payload text exactly and omits the photo", async () => {
+    const { buildWorkerTemplateTextPreview } = await import("./worker-template-render");
+    const preview = buildWorkerTemplateTextPreview({ templateCode: "MB-02B", view, bridge });
+    const payload = buildWorkerTemplateAutofill({ templateCode: "MB-02B", assetId: "X", view, bridge });
+    expect(preview.map((item) => item.field)).not.toContain("WORKER_PHOTO");
+    for (const item of preview) expect(payload[item.field]).toEqual({ type: "text", text: item.text });
+    expect(preview.find((item) => item.field === "WORKER_NAME")).toMatchObject({ label: "Nama", text: "NILAM ANGGRAINI" });
+  });
+});

@@ -28,6 +28,8 @@ type Props = {
   templateOptions: TemplateOption[];
   /** Template yang disarankan untuk kategori pekerja (mis. MB-02B pink untuk ART Momong). */
   recommendedTemplate?: string | null;
+  /** Teks persis yang masuk ke desain per template (lihat buildWorkerTemplateTextPreview). */
+  renderPreviews?: Record<string, Array<{ field: string; label: string; text: string }>>;
 };
 
 type GenerationResponse = { jobId?: string; status?: string; designUrl?: string; error?: string; missing?: string[]; wrongType?: string[]; templateCode?: string };
@@ -44,7 +46,7 @@ const POLL_DELAYS = [...Array(10).fill(2000), ...Array(32).fill(5000)] as number
 
 const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
-export function WorkerContentActions({ workerRegister, contentStatus: initialStatus, readinessScore, missing, approved: initialApproved, isAdmin, canGenerate, canPublish, generationConfigured, exportConfigured, initialExportUrl, initialDesignUrl, publishedChannel, publishChannels, templateOptions, recommendedTemplate }: Props) {
+export function WorkerContentActions({ workerRegister, contentStatus: initialStatus, readinessScore, missing, approved: initialApproved, isAdmin, canGenerate, canPublish, generationConfigured, exportConfigured, initialExportUrl, initialDesignUrl, publishedChannel, publishChannels, templateOptions, recommendedTemplate, renderPreviews = {} }: Props) {
   const [status, setStatus] = useState(initialStatus);
   const [approved, setApproved] = useState(initialApproved);
   const [busy, setBusy] = useState<null | "approve" | "generate" | "export" | "publish" | "poll">(null);
@@ -164,6 +166,11 @@ export function WorkerContentActions({ workerRegister, contentStatus: initialSta
       <Select value={templateCode} disabled={Boolean(busy) || templateOptions.length === 0} onChange={(event) => setTemplateCode(event.target.value)}>{templateOptions.map((item) => <option key={item.code} value={item.code}>{item.name} • {item.version}{item.code === recommendedTemplate ? " (disarankan)" : ""}</option>)}</Select>
     </Field>
     {TEMPLATE_HINT[templateCode] && <p className="text-xs leading-5 text-slate-500">{TEMPLATE_HINT[templateCode]}</p>}
+    {renderPreviews[templateCode]?.length ? <div className="rounded-xl border border-slate-200 bg-white p-3">
+      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Teks yang akan masuk ke desain</p>
+      <dl className="mt-1.5 space-y-1 text-xs">{renderPreviews[templateCode].map((item) => <div key={item.field} className="flex gap-2"><dt className="w-28 shrink-0 text-slate-500">{item.label}</dt><dd className={item.text ? "font-semibold text-brand-navy" : "italic text-slate-400"}>{item.text || "(kosong)"}</dd></div>)}</dl>
+      <p className="mt-2 text-[11px] text-slate-500">Ditambah foto profil. Ubah datanya di halaman Data pekerja bila perlu.</p>
+    </div> : null}
   </div>;
 
   const generateButton = (variant: "primary" | "secondary") => <Button className="w-full gap-2" variant={variant} onClick={generate} disabled={Boolean(busy) || !templateCode}>

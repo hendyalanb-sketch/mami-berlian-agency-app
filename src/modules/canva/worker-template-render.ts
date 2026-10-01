@@ -110,3 +110,35 @@ export function buildWorkerTemplateAutofill(input: {
     WORKER_DOCUMENT_STATUS: text(documentStatus, 42),
   };
 }
+
+/** Label field Autofill untuk pratinjau teks di layar staf. */
+export const AUTOFILL_FIELD_LABELS: Record<string, string> = {
+  WORKER_NAME: "Nama",
+  WORKER_POSITION: "Posisi",
+  WORKER_PLACEMENT: "Penempatan",
+  WORKER_HEADLINE: "Headline",
+  WORKER_ORIGIN: "Asal",
+  WORKER_SPECIALTY: "Spesialisasi",
+  WORKER_CODE: "Kode",
+  WORKER_LIVE_IN_STATUS: "Status menginap",
+  WORKER_INTRO_QUOTE: "Kata-kata pekerja",
+  WORKER_AGE: "Usia",
+  WORKER_READY_STATUS: "Status siap",
+  WORKER_PROFILE_LINE: "Baris profil",
+  WORKER_SKILL_1: "Keahlian 1",
+  WORKER_SKILL_2: "Keahlian 2",
+  WORKER_AVAILABILITY: "Ketersediaan",
+  WORKER_TRAINING_STATUS: "Training",
+  WORKER_DOCUMENT_STATUS: "Dokumen",
+};
+
+export type RenderTextPreview = Array<{ field: string; label: string; text: string }>;
+
+/**
+ * Teks persis yang akan dikirim ke Canva untuk satu template (tanpa foto), memakai fungsi render yang sama
+ * dengan route generate — agar staf melihat hasil akhir (kapital/dipendekkan) sebelum Generate (AGENTS.md #10).
+ */
+export function buildWorkerTemplateTextPreview(input: Omit<Parameters<typeof buildWorkerTemplateAutofill>[0], "assetId">): RenderTextPreview {
+  const payload = buildWorkerTemplateAutofill({ ...input, assetId: "PREVIEW" });
+  return Object.entries(payload).flatMap(([field, value]) => value.type === "text" ? [{ field, label: AUTOFILL_FIELD_LABELS[field] ?? field, text: value.text }] : []);
+}

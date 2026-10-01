@@ -8,6 +8,7 @@ import { readinessFromBridge } from "@/modules/enrichment/serialization";
 import { downloadDriveFile, uploadImageToDrive } from "@/modules/google/drive-rest";
 import { getGoogleAccessToken, GoogleConnectionError } from "@/modules/google/oauth-token-service";
 import { buildPhotoFilename, PHOTO_TYPES, validatePhotoInput, type PhotoType } from "@/modules/photo/validation";
+import { getGoogleStorageSettings } from "@/modules/settings/service";
 import { WorkerSourceService } from "@/modules/workers/source-service";
 
 export const runtime = "nodejs";
@@ -17,12 +18,12 @@ const MAX_PREPARED_BYTES = 5 * 1024 * 1024;
 async function context(userId: string) {
   const registerId = process.env.GOOGLE_REGISTER_SPREADSHEET_ID;
   const bridgeId = process.env.GOOGLE_BRIDGE_SPREADSHEET_ID;
-  const folderId = process.env.GOOGLE_PHOTO_FOLDER_ID;
-  if (!registerId || !bridgeId || !folderId) throw new Error("PHOTO_NOT_CONFIGURED");
+  const storage = await getGoogleStorageSettings();
+  if (!registerId || !bridgeId || !storage.photoFolderId) throw new Error("PHOTO_NOT_CONFIGURED");
   const accessToken = await getGoogleAccessToken(userId);
   return {
     accessToken,
-    folderId,
+    folderId: storage.photoFolderId,
     source: new WorkerSourceService({ spreadsheetId: registerId, accessToken }),
     bridge: new ContentBridgeService({ spreadsheetId: bridgeId, accessToken }),
   };
@@ -52,13 +53,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ reg
 
     const photoType = photoTypeValue as PhotoType;
     const fileName = buildPhotoFilename({ workerRegister: worker.workerRegister, workerName: worker.name, type: photoType, mimeType: file.type });
-    const uploaded = await uploadImageToDrive({
-      accessToken: ctx.accessToken,
-      folderId: ctx.folderId,
-      fileName,
-      contentType: file.type,
-      bytes: await file.arrayBuffer(),
-    });
+    const uploaded = await uploadImageToDrive({ accessToken: ctx.accessToken, folderId: ctx.folderId, fileName, contentType: file.type, bytes: await file.arrayBuffer() });
 
     const before = await ctx.bridge.get(worker.workerRegister);
     const patch: Partial<BridgeRecord> = photoType === "PROFILE"
@@ -66,34 +61,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ reg
       : photoType === "FULLBODY"
         ? { fullbody_photo_drive_id: uploaded.id, fullbody_photo_url: uploaded.webViewLink }
         : {};
-    const merged: BridgeRecord = {
-      ...(before ?? {}),
-      ...patch,
-      worker_register: worker.workerRegister,
-    };
+    const merged: BridgeRecord = { ...(before ?? {}), ...patch, worker_register: worker.workerRegister };
     const readiness = readinessFromBridge(merged);
 
-    await ctx.bridge.upsert({
-      worker_register: worker.workerRegister,
-      ...patch,
-      content_status: readiness.status,
-      last_updated_by: session.user.email ?? session.user.id,
-      last_updated_at: new Date().toISOString(),
-    });
-    await writeAudit({
-      workerRegister: worker.workerRegister,
-      userId: session.user.id,
-      action: "UPLOAD_WORKER_PHOTO",
-      entityType: "DRIVE_FILE",
-      entityId: uploaded.id,
-      after: { photoType, fileName, contentStatus: readiness.status },
-    });
+    await ctx.bridge.upsert({ worker_register: worker.workerRegister, ...patch, content_status: readiness.status, last_updated_by: session.user.email ?? session.user.id, last_updated_at: new Date().toISOString() });
+    await writeAudit({ workerRegister: worker.workerRegister, userId: session.user.id, action: "UPLOAD_WORKER_PHOTO", entityType: "DRIVE_FILE", entityId: uploaded.id, after: { photoType, fileName, contentStatus: readiness.status } });
 
     return NextResponse.json({ ok: true, file: uploaded, photoType, fileName, readiness });
   } catch (error) {
     if (error instanceof GoogleConnectionError) return NextResponse.json({ error: error.code }, { status: 409 });
     const message = error instanceof Error ? error.message : "PHOTO_UPLOAD_FAILED";
-    return NextResponse.json({ error: message.startsWith("DRIVE_UPLOAD_FAILED") ? message : "PHOTO_UPLOAD_FAILED" }, { status: 502 });
+    return NextResponse.json({ error: message.startsWith("DRIVE_UPLOAD_FAILED") || message === "PHOTO_NOT_CONFIGURED" ? message : "PHOTO_UPLOAD_FAILED" }, { status: message === "PHOTO_NOT_CONFIGURED" ? 503 : 502 });
   }
 }
 
@@ -110,13 +88,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ regi
     if (!fileId) return NextResponse.json({ error: "PHOTO_NOT_FOUND" }, { status: 404 });
     const response = await downloadDriveFile({ accessToken: ctx.accessToken, fileId: String(fileId) });
     if (!response.ok) return NextResponse.json({ error: "DRIVE_READ_FAILED" }, { status: response.status });
-    return new Response(response.body, {
-      status: 200,
-      headers: {
-        "Content-Type": response.headers.get("content-type") ?? "image/jpeg",
-        "Cache-Control": "private, no-store",
-      },
-    });
+    return new Response(response.body, { status: 200, headers: { "Content-Type": response.headers.get("content-type") ?? "image/jpeg", "Cache-Control": "private, no-store" } });
   } catch (error) {
     if (error instanceof GoogleConnectionError) return NextResponse.json({ error: error.code }, { status: 409 });
     return NextResponse.json({ error: "PHOTO_READ_FAILED" }, { status: 502 });

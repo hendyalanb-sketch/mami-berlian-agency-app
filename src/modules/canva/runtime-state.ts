@@ -14,7 +14,7 @@ export async function getCanvaRuntimeState(userId?: string | null) {
   const connection = await getCanvaConnectionStatus(userId);
   if (!db) return { configured, ...connection, templateActive: false, designId: process.env.CANVA_MB01_WORKING_DESIGN_ID ?? "", ready: false };
   const [template] = await db.select({ isActive: canvaTemplates.isActive, canvaTemplateId: canvaTemplates.canvaTemplateId, version: canvaTemplates.version }).from(canvaTemplates).where(eq(canvaTemplates.code, "MB-01")).limit(1);
-  const designId = process.env.CANVA_MB01_WORKING_DESIGN_ID ?? template?.canvaTemplateId ?? "";
+  const designId = template?.canvaTemplateId ?? process.env.CANVA_MB01_WORKING_DESIGN_ID ?? "";
   return {
     configured,
     ...connection,

@@ -51,7 +51,7 @@ export function WorkerContentActions({ workerRegister, contentStatus: initialSta
       const body = await response.json() as GenerationResponse;
       if (body.status === "DONE") return body;
       if (body.status === "ERROR" || (!response.ok && response.status !== 202)) throw new Error(body.error ?? "GENERATION_FAILED");
-      setGenerationNote(`Canva sedang memproses… ${attempt + 1}/30`);
+      setGenerationNote(`Canva sedang memproses ${templateCode}… ${attempt + 1}/30`);
     }
     throw new Error("GENERATION_POLL_TIMEOUT");
   }
@@ -77,7 +77,7 @@ export function WorkerContentActions({ workerRegister, contentStatus: initialSta
         if (!body.jobId) throw new Error("GENERATION_JOB_MISSING");
         setStatus("GENERATING"); setGenerationNote(`Autofill ${templateCode} berjalan…`); result = await pollGeneration(body.jobId);
       }
-      setStatus("GENERATED"); setDesignUrl(result.designUrl ?? null); setGenerationNote(`${body.templateCode ?? templateCode} berhasil dibuat. Lanjutkan Export ke Drive.`);
+      setStatus("GENERATED"); setDesignUrl(result.designUrl ?? null); setGenerationNote(`${body.templateCode ?? templateCode} berhasil dibuat. Periksa hasil di Canva lalu Export PNG ke Drive.`);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "GENERATION_FAILED"); setGenerationNote(null); }
     finally { setBusy(false); }
   }
@@ -108,7 +108,7 @@ export function WorkerContentActions({ workerRegister, contentStatus: initialSta
 
   const readyForApproval = missing.length === 0 && !approved;
   const generating = status === "GENERATING";
-  const canRunGeneration = approved && ["APPROVED", "ERROR"].includes(status);
+  const canRunGeneration = approved && !generating;
   const hasDesign = ["GENERATED", "ARCHIVED", "PUBLISHED"].includes(status);
   const archived = ["ARCHIVED", "PUBLISHED"].includes(status) && Boolean(exportUrl || status === "ARCHIVED" || status === "PUBLISHED");
   const selectedTemplate = templateOptions.find((item) => item.code === templateCode);
@@ -119,7 +119,7 @@ export function WorkerContentActions({ workerRegister, contentStatus: initialSta
 
     <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
       <label className="block"><span className="mb-1.5 block text-xs font-bold text-slate-600">Template Canva</span><select value={templateCode} disabled={busy || templateOptions.length === 0} onChange={(event) => setTemplateCode(event.target.value)} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-[#0B1F3A]">{templateOptions.map((item) => <option key={item.code} value={item.code}>{item.name} • {item.version}</option>)}</select></label>
-      <p className="mt-2 text-xs leading-5 text-slate-500">{templateCode === "MB-01A" ? "Personal: profil lebih human, cocok untuk perkenalan kandidat." : "Promo: headline, pengalaman, skill, dan readiness lebih menonjol."}</p>
+      <p className="mt-2 text-xs leading-5 text-slate-500">{templateCode === "MB-01A" ? "Personal: profil lebih human, dengan quote, usia, asal, spesialisasi, dan status siap interview." : "Promo: nama, pengalaman, skill, availability, training, dan status dokumen lebih menonjol."}</p>
     </div>
 
     <Button className="w-full gap-2" variant="secondary" onClick={generate} disabled={busy || !canGenerate || !generationConfigured || !canRunGeneration || !selectedTemplate}>{generating || (busy && canRunGeneration) ? <Loader2 size={17} className="animate-spin"/> : <Sparkles size={17}/>}Generate {templateCode}</Button>

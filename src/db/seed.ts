@@ -145,7 +145,8 @@ async function upsertMasters() {
   }
 
   for (const template of canvaTemplateRows) {
-    await db!.insert(canvaTemplates).values(template).onConflictDoUpdate({
+    const values = { ...template, requiredFieldsJson: [...template.requiredFieldsJson] };
+    await db!.insert(canvaTemplates).values(values).onConflictDoUpdate({
       target: canvaTemplates.code,
       set: {
         name: template.name,

@@ -77,8 +77,8 @@ export function WorkerPhotoPrep({ workerRegister, workerName = "PEKERJA", driveE
   }
 
   return <div className="space-y-4">
-    <div role="radiogroup" aria-label="Jenis foto" className="flex gap-2 overflow-x-auto pb-1">
-      {PHOTO_TYPE_OPTIONS.map((option) => <button key={option.value} type="button" role="radio" aria-checked={photoType === option.value} onClick={() => { setPhotoType(option.value); setUploaded(null); }} className={cn("min-h-11 shrink-0 rounded-xl border px-3 text-xs font-bold", photoType === option.value ? "border-brand-navy bg-brand-navy text-white" : "border-slate-200 bg-white text-slate-600")}>{option.label}</button>)}
+    <div role="radiogroup" aria-label="Jenis foto" className="grid grid-cols-4 gap-1.5">
+      {PHOTO_TYPE_OPTIONS.map((option) => <button key={option.value} type="button" role="radio" aria-checked={photoType === option.value} onClick={() => { setPhotoType(option.value); setUploaded(null); }} className={cn("min-h-11 rounded-xl border px-1 text-center text-xs font-bold leading-tight", photoType === option.value ? "border-brand-navy bg-brand-navy text-white" : "border-slate-200 bg-white text-slate-600")}>{option.label}</button>)}
     </div>
 
     {showCurrentProfile && <figure className="mx-auto w-full max-w-xs">

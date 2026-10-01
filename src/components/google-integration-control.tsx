@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, FolderPlus, RefreshCw, TriangleAlert } from "lucide-react";
+import { FolderPlus, RefreshCw } from "lucide-react";
+import { Alert, ErrorAlert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type Check = { status: "HEALTHY" | "UNHEALTHY" | "NOT_CONFIGURED"; message: string };
 type Health = { healthy?: boolean; checks?: Record<string, Check>; error?: string };
@@ -16,53 +18,47 @@ const labels: Record<string, string> = {
 
 export function GoogleIntegrationControl({ configured }: { configured: boolean }) {
   const [health, setHealth] = useState<Health | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<null | "check" | "provision">(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function fetchHealth() {
+    const response = await fetch("/api/integrations/google/health", { cache: "no-store" });
+    const body = await response.json() as Health;
+    setHealth(body);
+    if (body.error) setError(body.error);
+  }
 
   async function validate() {
-    setBusy(true);
-    setHealth(null);
-    setMessage(null);
-    try {
-      const response = await fetch("/api/integrations/google/health", { cache: "no-store" });
-      const body = await response.json() as Health;
-      setHealth(body);
-    } catch {
-      setHealth({ error: "GOOGLE_HEALTH_FAILED" });
-    } finally {
-      setBusy(false);
-    }
+    setBusy("check"); setHealth(null); setMessage(null); setError(null);
+    try { await fetchHealth(); } catch { setError("GOOGLE_HEALTH_FAILED"); } finally { setBusy(null); }
   }
 
   async function provision() {
-    setBusy(true);
-    setMessage(null);
+    setBusy("provision"); setMessage(null); setError(null);
     try {
       const response = await fetch("/api/integrations/google/provision", { method: "POST" });
       const body = await response.json() as { ok?: boolean; error?: string };
       if (!response.ok) throw new Error(body.error ?? "GOOGLE_PROVISION_FAILED");
-      setMessage("Folder runtime aman sudah diprovision. Health check dijalankan ulang.");
-      const healthResponse = await fetch("/api/integrations/google/health", { cache: "no-store" });
-      setHealth(await healthResponse.json() as Health);
+      setMessage("Folder sudah disiapkan. Pemeriksaan dijalankan ulang.");
+      await fetchHealth();
     } catch (cause) {
-      setMessage(cause instanceof Error ? cause.message : "GOOGLE_PROVISION_FAILED");
-    } finally {
-      setBusy(false);
-    }
+      setError(cause instanceof Error ? cause.message : "GOOGLE_PROVISION_FAILED");
+    } finally { setBusy(null); }
   }
 
   const needsStorageProvision = health?.checks && [health.checks.photoFolder, health.checks.exportFolder].some((check) => check && check.status !== "HEALTHY");
 
-  return <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div><p className="font-bold text-brand-navy">Google Runtime Health</p><p className="mt-1 text-xs text-slate-500">Tes read-only untuk Register, Content Bridge, folder foto, dan folder export.</p></div>
-      <div className="flex flex-wrap gap-2"><Button onClick={validate} disabled={busy || !configured} className="gap-2"><RefreshCw size={15} className={busy ? "animate-spin" : ""}/>{busy ? "Memproses…" : "Periksa Google"}</Button>{needsStorageProvision && <Button variant="secondary" onClick={provision} disabled={busy || !configured} className="gap-2"><FolderPlus size={15}/>Provision Safe Folders</Button>}</div>
+  return <div className="space-y-3">
+    <div className="flex flex-wrap gap-2">
+      <Button onClick={validate} disabled={Boolean(busy) || !configured} className="gap-2"><RefreshCw size={15} className={busy === "check" ? "animate-spin" : ""} aria-hidden />{busy === "check" ? "Memeriksa…" : "Periksa Google"}</Button>
+      {needsStorageProvision && <Button variant="secondary" onClick={provision} disabled={Boolean(busy) || !configured} className="gap-2"><FolderPlus size={15} aria-hidden />{busy === "provision" ? "Menyiapkan…" : "Siapkan Folder Drive"}</Button>}
     </div>
-    {!configured && <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-800">Google OAuth dan ID spreadsheet belum lengkap.</p>}
-    {health?.healthy && <p className="flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-xs font-semibold text-emerald-800"><CheckCircle2 size={16}/>Semua resource Google yang dibutuhkan sehat.</p>}
-    {health?.checks && <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">{Object.entries(health.checks).map(([key, check]) => <div key={key} className={`rounded-xl border p-3 text-xs ${check.status === "HEALTHY" ? "border-emerald-100 bg-emerald-50 text-emerald-800" : "border-amber-100 bg-amber-50 text-amber-800"}`}><p className="font-bold">{labels[key] ?? key}</p><p className="mt-1 leading-5">{check.message}</p></div>)}</div>}
-    {message && <p className="rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-700">{message}</p>}
-    {health?.error && <p className="flex items-start gap-2 rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-700"><TriangleAlert size={16} className="mt-0.5 shrink-0"/>{health.error}</p>}
-    <p className="text-[11px] leading-5 text-slate-500">Provision Safe Folders hanya membuat folder baru milik OAuth aplikasi bila target existing tidak dapat dipakai. Folder existing tidak dihapus, dipindah, atau diubah.</p>
+    {!configured && <Alert tone="warning" title="Konfigurasi Google belum lengkap.">Isi Google OAuth client, ID spreadsheet Register & Content Bridge, dan folder foto di environment Vercel.</Alert>}
+    {health?.healthy && <Alert tone="success" title="Semua resource Google bisa diakses." />}
+    {health?.checks && <ul className="grid gap-2 sm:grid-cols-2">{Object.entries(health.checks).map(([key, check]) => <li key={key} className={cn("rounded-xl border p-3 text-xs", check.status === "HEALTHY" ? "border-emerald-100 bg-emerald-50 text-emerald-800" : "border-amber-100 bg-amber-50 text-amber-800")}><p className="font-bold">{labels[key] ?? key} — {check.status === "HEALTHY" ? "OK" : check.status === "NOT_CONFIGURED" ? "Belum diatur" : "Bermasalah"}</p><p className="mt-1 leading-5">{check.message}</p></li>)}</ul>}
+    {message && <Alert tone="info" title={message} />}
+    <ErrorAlert code={error} />
+    {needsStorageProvision && <p className="text-[11px] leading-5 text-slate-500">“Siapkan Folder Drive” hanya membuat folder baru bila folder yang ada tidak bisa dipakai. Folder lama tidak dihapus, dipindah, atau diubah.</p>}
   </div>;
 }

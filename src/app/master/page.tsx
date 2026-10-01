@@ -1,7 +1,6 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { ContentMasterManager } from "@/components/content-master-manager";
-import { MasterDataManager } from "@/components/master-data-manager";
+import { MasterTabs } from "@/components/master-tabs";
 import { authOptions } from "@/lib/auth";
 import { isAdmin } from "@/lib/permissions";
 import { getRuntimeCapabilities } from "@/modules/integrations/capabilities";
@@ -17,10 +16,9 @@ export default async function MasterPage() {
   const capabilities = getRuntimeCapabilities();
   return <div className="space-y-5">
     <header>
-      <h2 className="text-2xl font-bold text-brand-navy">Master Data</h2>
-      <p className="mt-1 text-sm text-slate-500">Sumber pilihan operasional dan publikasi: kategori, skill, pengalaman, penempatan, rate, mapping Register, template Canva, channel, CTA, dan label tampilan.</p>
+      <h1 className="text-2xl font-bold text-brand-navy">Master Data</h1>
+      <p className="mt-1 text-sm text-slate-500">Sumber semua pilihan yang dilihat staf. Gunakan Nonaktifkan, bukan hapus, agar data lama tetap konsisten.</p>
     </header>
-    <MasterDataManager enabled={capabilities.database.configured}/>
-    <ContentMasterManager enabled={capabilities.database.configured}/>
+    <MasterTabs enabled={capabilities.database.configured} />
   </div>;
 }

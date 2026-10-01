@@ -78,7 +78,7 @@ export function WorkerWorkspace({ workerRegister, enabled, editable, driveEnable
     {data && steps && <>
       <WorkflowStepper workerRegister={data.worker.workerRegister} steps={steps} />
       {error && <ErrorAlert code={error} />}
-      <div className="grid gap-4 lg:grid-cols-[1.3fr_.7fr] lg:items-start">
+      <div className="grid gap-4 lg:grid-cols-[1.3fr_.7fr] lg:items-start [&>*]:min-w-0">
         <Card id="data" className="scroll-mt-4"><CardHeader><CardTitle className="flex items-center gap-2"><ClipboardList size={18} aria-hidden />Data pekerja</CardTitle></CardHeader><CardContent>
           <WorkerEnrichmentForm key={formKey} workerRegister={data.worker.workerRegister} data={data} editable={editable} onSaved={onSaved} />
         </CardContent></Card>

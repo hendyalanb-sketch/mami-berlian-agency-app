@@ -27,7 +27,7 @@ export function buildWorkflowSteps(input: WorkflowInput): WorkflowStep[] {
   const published = status === "PUBLISHED";
 
   const raw: Array<Omit<WorkflowStep, "state"> & { done: boolean; blocked: boolean; error?: boolean }> = [
-    { key: "data", label: "Data", done: dataDone, blocked: false, hint: dataDone ? "Data lengkap" : "Lengkapi kategori, pengalaman, keahlian, penempatan, dan izin publikasi" },
+    { key: "data", label: "Data", done: dataDone, blocked: false, hint: dataDone ? "Data lengkap" : "Lengkapi data wajib & izin publikasi" },
     { key: "photo", label: "Foto", done: photoDone, blocked: false, hint: photoDone ? "Foto profil tersimpan" : "Unggah foto profil" },
     { key: "approve", label: "Setujui", done: approved, blocked: !dataDone || !photoDone, hint: approved ? "Konten disetujui" : !dataDone || !photoDone ? "Terkunci: lengkapi data dan foto dulu" : "Periksa preview lalu minta Admin menyetujui" },
     { key: "generate", label: "Generate", done: generated, blocked: !approved, error: status === "ERROR", hint: generated ? "Desain Canva jadi" : !approved ? "Terkunci: konten belum disetujui" : status === "GENERATING" ? "Canva sedang membuat desain" : status === "ERROR" ? "Generate gagal, coba ulang" : "Buat desain di Canva" },

@@ -82,7 +82,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ regist
     {!capabilities.enrichment.configured && <Alert tone="warning" title="Preview belum bisa dibuka.">{admin ? "Neon, Google OAuth, Content Bridge, dan kunci enkripsi token harus siap. Periksa menu Integrasi." : "Koneksi aplikasi belum siap. Hubungi Admin."}</Alert>}
     <ErrorAlert code={errorCode} />
 
-    <div className="grid gap-5 lg:grid-cols-[1fr_380px] lg:items-start">
+    <div className="grid gap-5 lg:grid-cols-[1fr_380px] lg:items-start [&>*]:min-w-0">
       <Card><CardHeader><CardTitle className="flex items-center gap-2"><Eye size={19} aria-hidden />Yang akan terlihat publik</CardTitle></CardHeader><CardContent className="space-y-4">
         {view ? <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm"><div className="grid md:grid-cols-[.9fr_1.1fr]">
           <div className="aspect-[4/5] bg-slate-100">{data?.readiness.checks.profile_photo

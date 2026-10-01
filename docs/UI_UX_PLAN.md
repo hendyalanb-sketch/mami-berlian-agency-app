@@ -1,7 +1,7 @@
 # UI/UX Improvement Plan — Content Operations v3
 
 Dibuat: 2026-10-01
-Status: **Draft — menunggu persetujuan**
+Status: **Fase 1–4 diimplementasi (2026-10-01); Fase 5 langkah 1–2 selesai, langkah 3 menunggu staging.** Keputusan D1–D4 disetujui sesuai rekomendasi.
 Ruang lingkup: perbaikan UI/UX pada aplikasi yang sudah ada. Tidak menambah modul baru di luar MVP (AGENTS.md #13), tidak mengubah skema DB, tidak menulis ke Register.
 
 ## Tujuan
@@ -80,6 +80,13 @@ Ruang lingkup: perbaikan UI/UX pada aplikasi yang sudah ada. Tidak menambah modu
 | D2 | Karena staging belum ada, boleh dibuat halaman **galeri komponen dev-only** (`/dev/ui`, data contoh, mati otomatis di production) agar UI bisa dicek di 360/390/412 px sekarang? | Ya — tanpa data asli, tanpa PII, diblok saat `NODE_ENV=production`. |
 | D3 | Aksi yang belum tersedia: **disembunyikan** atau **ditampilkan terkunci dengan alasan**? | Disembunyikan di Workflow Konten, alasannya tampil di stepper. |
 | D4 | Edit nama master data (Fase 4.3) menyentuh API master — boleh? | Ya, dengan audit event; kode tetap tidak bisa diubah. |
+
+## Catatan implementasi
+
+- 4.3 Edit nama master memakai endpoint upsert-by-code yang sudah ada (tercatat audit). Karena endpoint itu juga mengaktifkan item, tombol Edit hanya muncul untuk item aktif — tidak ada perubahan API.
+- 4.6 File modul satu-baris (`publish/service.ts`, `workers/public-view.ts`, `photo/*.ts`) belum diformat ulang agar tidak menyentuh logika bisnis di PR UI.
+- D2: galeri `/dev/ui` (data fiktif) aktif hanya saat `NODE_ENV !== "production"`; proxy membiarkan `/dev/*` lewat tanpa login hanya di development.
+- Ditemukan saat cek visual: aturan dasar di `globals.css` di luar `@layer base` membuat `text-xs` pada semua tombol diabaikan — sudah diperbaiki.
 
 ## Di luar ruang lingkup
 

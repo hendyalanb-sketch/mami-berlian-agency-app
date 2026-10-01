@@ -1,4 +1,4 @@
-import { inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { db } from "@/db/client";
@@ -16,7 +16,9 @@ async function runHealth(userId: string, activate: boolean) {
   if (!db) return { status: 503, body: { error: "DATABASE_NOT_CONFIGURED" } };
 
   const templates = await db.select().from(canvaTemplates).where(inArray(canvaTemplates.code, [...CANVA_WORKER_TEMPLATE_CODES]));
-  if (!templates.length) return { status: 503, body: { error: "WORKER_TEMPLATES_NOT_CONFIGURED" } };
+  const configuredCodes = new Set(templates.map((template) => template.code));
+  const missingTemplates = CANVA_WORKER_TEMPLATE_CODES.filter((code) => !configuredCodes.has(code));
+  if (!templates.length) return { status: 503, body: { error: "WORKER_TEMPLATES_NOT_CONFIGURED", missingTemplates: [...CANVA_WORKER_TEMPLATE_CODES] } };
 
   try {
     const accessToken = await getCanvaAccessToken(userId);
@@ -39,14 +41,14 @@ async function runHealth(userId: string, activate: boolean) {
       const issues = [...health.missing, ...health.wrongType.map((field) => `${field}:TYPE`)];
 
       await db.insert(integrationHealth).values({
-        provider: `CANVA_${template.code.replace("-", "")}`,
+        provider: `CANVA_${template.code.replaceAll("-", "")}`,
         status: health.valid ? "HEALTHY" : "UNHEALTHY",
         message: health.valid ? `${template.code} dataset lengkap` : `Issues: ${issues.join(", ")}`,
         metadataJson: { templateCode: template.code, designId, fields: Object.keys(dataset), missing: health.missing, wrongType: health.wrongType },
       });
 
       if (activate) {
-        await db.update(canvaTemplates).set({ isActive: health.valid, updatedAt: new Date() }).where(inArray(canvaTemplates.id, [template.id]));
+        await db.update(canvaTemplates).set({ isActive: health.valid, updatedAt: new Date() }).where(eq(canvaTemplates.id, template.id));
       }
 
       results.push({
@@ -59,10 +61,13 @@ async function runHealth(userId: string, activate: boolean) {
       });
     }
 
-    const valid = results.length > 0 && results.every((item) => item.valid);
-    const missing = results.flatMap((item) => item.missing.map((field) => `${item.code}:${field}`));
+    const valid = missingTemplates.length === 0 && results.length === CANVA_WORKER_TEMPLATE_CODES.length && results.every((item) => item.valid);
+    const missing = [
+      ...missingTemplates.map((code) => `${code}:TEMPLATE_NOT_CONFIGURED`),
+      ...results.flatMap((item) => item.missing.map((field) => `${item.code}:${field}`)),
+    ];
     const wrongType = results.flatMap((item) => item.wrongType.map((field) => `${item.code}:${field}`));
-    return { status: valid ? 200 : 409, body: { valid, missing, wrongType, templates: results } };
+    return { status: valid ? 200 : 409, body: { valid, missing, wrongType, missingTemplates, templates: results } };
   } catch (error) {
     const code = error instanceof CanvaConnectionError ? error.code : error instanceof CanvaApiError ? error.code : "CANVA_HEALTH_FAILED";
     return { status: error instanceof CanvaConnectionError ? 409 : 502, body: { error: code } };

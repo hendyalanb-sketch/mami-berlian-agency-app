@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { experienceLevels, placementOptions, salaryRates, salaryZones, skills, workerCategories } from "@/db/schema";
+import { experienceLevels, placementOptions, publishChannels, salaryRates, salaryZones, skills, workerCategories } from "@/db/schema";
 import { formatSalaryRange, resolveSalaryRate } from "@/modules/rules/salary";
 
 export class MasterDataUnavailableError extends Error {
@@ -27,6 +27,14 @@ export async function getWorkerMasterOptions() {
       salaryZoneCode: row.salaryZoneId ? zoneById.get(row.salaryZoneId)?.code ?? null : null,
     })),
   };
+}
+
+export async function getActivePublishChannels() {
+  if (!db) throw new MasterDataUnavailableError();
+  const rows = await db.select({ code: publishChannels.code, name: publishChannels.name })
+    .from(publishChannels)
+    .where(eq(publishChannels.isActive, true));
+  return rows.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function validateSkillCodes(codes: string[]) {

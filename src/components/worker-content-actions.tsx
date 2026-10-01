@@ -15,16 +15,17 @@ type Props = {
   generationConfigured: boolean;
   exportConfigured: boolean;
   initialExportUrl?: string | null;
+  publishChannels: Array<{ code: string; name: string }>;
 };
 
 type GenerationResponse = { jobId?: string; status?: string; designUrl?: string; error?: string; missing?: string[]; wrongType?: string[] };
 
-export function WorkerContentActions({ workerRegister, contentStatus: initialStatus, readinessScore, missing, approved: initialApproved, isAdmin, canGenerate, generationConfigured, exportConfigured, initialExportUrl }: Props) {
+export function WorkerContentActions({ workerRegister, contentStatus: initialStatus, readinessScore, missing, approved: initialApproved, isAdmin, canGenerate, generationConfigured, exportConfigured, initialExportUrl, publishChannels }: Props) {
   const [status, setStatus] = useState(initialStatus);
   const [approved, setApproved] = useState(initialApproved);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [channel, setChannel] = useState("WHATSAPP");
+  const [channel, setChannel] = useState(publishChannels[0]?.code ?? "");
   const [designUrl, setDesignUrl] = useState<string | null>(null);
   const [exportUrl, setExportUrl] = useState<string | null>(initialExportUrl ?? null);
   const [generationNote, setGenerationNote] = useState<string | null>(null);
@@ -87,6 +88,7 @@ export function WorkerContentActions({ workerRegister, contentStatus: initialSta
   }
 
   async function publish() {
+    if (!channel) return;
     setBusy(true); setError(null);
     try {
       const response = await fetch(`/api/workers/${encodeURIComponent(workerRegister)}/publish`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ channel }) });
@@ -113,7 +115,8 @@ export function WorkerContentActions({ workerRegister, contentStatus: initialSta
     {hasDesign && <Button className="w-full gap-2" variant="secondary" onClick={exportToDrive} disabled={busy || !canGenerate || !exportConfigured}><Archive size={17}/>{status === "GENERATED" ? "Export PNG ke Drive" : "Export Ulang ke Drive"}</Button>}
     {hasDesign && !exportConfigured && <p className="rounded-xl bg-amber-50 p-2 text-xs text-amber-800">Export dikunci sampai folder arsip Drive sehat/provisioned.</p>}
     {exportUrl && <a href={exportUrl} target="_blank" rel="noreferrer" className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 text-sm font-bold text-emerald-800"><ExternalLink size={16}/>Buka arsip Drive</a>}
-    {archived && <div className="grid gap-2 sm:grid-cols-[1fr_auto]"><select value={channel} onChange={(event)=>setChannel(event.target.value)} className="min-h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm"><option value="WHATSAPP">WhatsApp</option><option value="INSTAGRAM">Instagram</option><option value="FACEBOOK">Facebook</option><option value="KATALOG">Katalog</option><option value="WEBSITE">Website</option><option value="OTHER">Lainnya</option></select><Button onClick={publish} disabled={busy} className="gap-2"><Send size={17}/>Mark Published</Button></div>}
+    {archived && publishChannels.length > 0 && <div className="grid gap-2 sm:grid-cols-[1fr_auto]"><select value={channel} onChange={(event)=>setChannel(event.target.value)} className="min-h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm">{publishChannels.map((item)=><option key={item.code} value={item.code}>{item.name}</option>)}</select><Button onClick={publish} disabled={busy || !channel} className="gap-2"><Send size={17}/>Mark Published</Button></div>}
+    {archived && publishChannels.length === 0 && <p className="rounded-xl bg-amber-50 p-2 text-xs text-amber-800">Tidak ada channel publikasi aktif. Aktifkan minimal satu channel di Master Data.</p>}
     {missing.length > 0 && <p className="rounded-xl bg-amber-50 p-2 text-xs text-amber-800">Belum siap: {missing.join(", ")}.</p>}
     {error && <p className="rounded-xl bg-red-50 p-2 text-xs font-semibold text-red-700">{error}</p>}
   </div>;

@@ -26,5 +26,15 @@ export async function GET() {
   }
 
   const healthy = Object.values(checks).every((item) => item.configured && item.healthy !== false);
-  return NextResponse.json({ service: "mami-berlian-content-ops", healthy, checks, timestamp: new Date().toISOString() }, { status: healthy ? 200 : 503 });
+  return NextResponse.json(
+    {
+      service: "mami-berlian-content-ops",
+      revision: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
+      environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? null,
+      healthy,
+      checks,
+      timestamp: new Date().toISOString(),
+    },
+    { status: healthy ? 200 : 503 },
+  );
 }

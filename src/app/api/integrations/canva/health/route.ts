@@ -7,7 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { isAdmin } from "@/lib/permissions";
 import { getCanvaAccessToken, CanvaConnectionError } from "@/modules/canva/oauth-token-service";
 import { getCanvaDesignDataset, CanvaApiError } from "@/modules/canva/rest";
-import { evaluateTemplateHealth } from "@/modules/canva/template-health";
+import { evaluateTemplateDataset } from "@/modules/canva/template-health";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,12 +21,13 @@ async function runHealth(userId: string, activate: boolean) {
   try {
     const accessToken = await getCanvaAccessToken(userId);
     const dataset = await getCanvaDesignDataset({ accessToken, designId });
-    const health = evaluateTemplateHealth(Object.keys(dataset));
+    const health = evaluateTemplateDataset(dataset);
+    const issues = [...health.missing, ...health.wrongType.map((field) => `${field}:TYPE`)];
     await db.insert(integrationHealth).values({
       provider: "CANVA_MB01",
       status: health.valid ? "HEALTHY" : "UNHEALTHY",
-      message: health.valid ? "MB-01 dataset lengkap" : `Missing: ${health.missing.join(", ")}`,
-      metadataJson: { designId, fields: Object.keys(dataset), missing: health.missing },
+      message: health.valid ? "MB-01 dataset lengkap" : `Issues: ${issues.join(", ")}`,
+      metadataJson: { designId, fields: Object.keys(dataset), missing: health.missing, wrongType: health.wrongType },
     });
     if (activate) {
       await db.update(canvaTemplates).set({ canvaTemplateId: designId, isActive: health.valid, updatedAt: new Date() }).where(eq(canvaTemplates.id, template.id));

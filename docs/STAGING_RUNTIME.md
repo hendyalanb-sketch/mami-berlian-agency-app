@@ -12,6 +12,7 @@ Updated: 2026-10-01
 - Team ID: `team_lLFdnuYqmlrytUMLwPeDh0aZ`
 - Production/source branch during staging: `content-ops-v3`
 - App host: `https://mami-berlian-content-ops.vercel.app`
+- Environment bootstrap redeploy triggered after `DATABASE_URL`, `ENCRYPTION_KEY`, and `NEXTAUTH_SECRET` were entered in Vercel on 2026-10-01.
 
 ## Neon
 - Project: `mami-berlian-content-ops-db`

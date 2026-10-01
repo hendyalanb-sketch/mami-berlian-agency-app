@@ -11,15 +11,14 @@ const main = [
   { href: "/konten", label: "Konten", icon: Image },
   { href: "/lainnya", label: "Lainnya", icon: MoreHorizontal },
 ];
-const desktop = [
-  ...main.slice(0, 3),
-  { href: "/master", label: "Master Data", icon: LayoutGrid },
-  { href: "/integrasi", label: "Integrasi", icon: Settings },
-];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, admin = false }: { children: React.ReactNode; admin?: boolean }) {
   const pathname = usePathname();
   if (pathname.startsWith("/login")) return <div className="min-h-screen bg-[#F7F9FC] text-slate-900">{children}</div>;
+  const desktop = admin
+    ? [...main.slice(0, 3), { href: "/master", label: "Master Data", icon: LayoutGrid }, { href: "/integrasi", label: "Integrasi", icon: Settings }]
+    : main.slice(0, 3);
+
   return <div className="min-h-screen bg-[#F7F9FC] text-slate-900">
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-slate-200 bg-white px-4 py-6 lg:block">
       <div className="mb-8 px-3"><p className="text-xs font-bold tracking-[0.2em] text-[#E7508B]">MAMI BERLIAN</p><h1 className="mt-1 text-lg font-bold text-[#0B1F3A]">Content Operations</h1></div>

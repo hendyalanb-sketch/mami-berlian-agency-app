@@ -47,6 +47,36 @@ const zones = [
 
 const channels = ["WHATSAPP", "INSTAGRAM", "FACEBOOK", "KATALOG", "WEBSITE", "OTHER"];
 
+const canvaTemplateRows = [
+  {
+    code: "MB-01",
+    name: "Pekerja Ready - Legacy",
+    canvaTemplateId: process.env.CANVA_MB01_WORKING_DESIGN_ID ?? "DAHWwgtEeR0",
+    version: "v4",
+    contentType: "PEKERJA_READY",
+    requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_AGE","WORKER_ORIGIN","WORKER_CATEGORY","WORKER_SKILLS","WORKER_PLACEMENT","WORKER_SALARY","CTA_TEXT"],
+    isActive: false,
+  },
+  {
+    code: "MB-01A",
+    name: "MB-01A — Personal",
+    canvaTemplateId: process.env.CANVA_MB01A_DESIGN_ID ?? "DAHWxdqUjBU",
+    version: "v1",
+    contentType: "WORKER_PROFILE_PERSONAL",
+    requiredFieldsJson: ["WORKER_HEADLINE","WORKER_ORIGIN","WORKER_SPECIALTY","WORKER_CODE","WORKER_LIVE_IN_STATUS","WORKER_INTRO_QUOTE","WORKER_PHOTO","WORKER_AGE","WORKER_READY_STATUS"],
+    isActive: true,
+  },
+  {
+    code: "MB-01B",
+    name: "MB-01B — Promo",
+    canvaTemplateId: process.env.CANVA_MB01B_DESIGN_ID ?? "DAHWxdxDo0A",
+    version: "v1",
+    contentType: "WORKER_PROFILE_PROMO",
+    requiredFieldsJson: ["WORKER_PHOTO","WORKER_PROFILE_LINE","WORKER_CODE","WORKER_SKILL_1","WORKER_HEADLINE","WORKER_NAME","WORKER_AVAILABILITY","WORKER_LIVE_IN_STATUS","WORKER_TRAINING_STATUS","WORKER_SKILL_2","WORKER_DOCUMENT_STATUS"],
+    isActive: true,
+  },
+] as const;
+
 async function seedInitialAdmin() {
   const initialAdminEmail = process.env.INITIAL_ADMIN_EMAIL?.trim().toLowerCase();
   if (!initialAdminEmail) {
@@ -114,19 +144,20 @@ async function upsertMasters() {
     await db!.insert(ctaProfiles).values(defaultCta);
   }
 
-  await db!.insert(canvaTemplates).values({
-    code: "MB-01",
-    name: "Pekerja Ready",
-    canvaTemplateId: process.env.CANVA_MB01_WORKING_DESIGN_ID ?? process.env.CANVA_MB01_SOURCE_DESIGN_ID ?? "DAHWvDoKJo8",
-    version: "v1",
-    contentType: "PEKERJA_READY",
-    requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_AGE","WORKER_ORIGIN","WORKER_CATEGORY","WORKER_SKILLS","WORKER_PLACEMENT","WORKER_SALARY","CTA_TEXT"],
-    isActive: false,
-  }).onConflictDoUpdate({ target: canvaTemplates.code, set: {
-    canvaTemplateId: process.env.CANVA_MB01_WORKING_DESIGN_ID ?? process.env.CANVA_MB01_SOURCE_DESIGN_ID ?? "DAHWvDoKJo8",
-    isActive: false,
-    updatedAt: new Date(),
-  } });
+  for (const template of canvaTemplateRows) {
+    await db!.insert(canvaTemplates).values(template).onConflictDoUpdate({
+      target: canvaTemplates.code,
+      set: {
+        name: template.name,
+        canvaTemplateId: template.canvaTemplateId,
+        version: template.version,
+        contentType: template.contentType,
+        requiredFieldsJson: [...template.requiredFieldsJson],
+        isActive: template.isActive,
+        updatedAt: new Date(),
+      },
+    });
+  }
 
   const mappings = [
     ["CATEGORY", "ART", "ART"],

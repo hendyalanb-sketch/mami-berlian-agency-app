@@ -1,0 +1,53 @@
+name: Content Ops CI
+
+on:
+  push:
+    branches: [content-ops-v3, feat/generate-all-templates]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Unit tests
+        run: npm run test
+      - name: Lint
+        run: npm run lint
+      - name: Install browser for mobile verification
+        run: npx --yes agent-browser install --with-deps
+      - name: Verify multi-template UI at mobile widths
+        run: |
+          npm run dev > /tmp/mba-next-dev.log 2>&1 &
+          MBA_DEV_PID=$!
+          trap 'kill "$MBA_DEV_PID" || true' EXIT
+          node scripts/verify-generation-batch.mjs
+        env:
+          NEXTAUTH_SECRET: ci-only-browser-test-secret
+          NEXTAUTH_URL: http://localhost:3000
+      - name: Upload mobile verification screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: multi-template-mobile
+          path: artifacts/batch-*.png
+          if-no-files-found: ignore
+      - name: Build
+        run: npm run build
+        env:
+          GOOGLE_REGISTER_SPREADSHEET_ID: 1McK_XHx3F81LqzBfrzNWI7QECdadKBnGmXqN7en35P4
+          GOOGLE_BRIDGE_SPREADSHEET_ID: 1ij6AI2y957PuHHsNGOi41IxWanvF63Sq7qucSWshuIA
+          GOOGLE_PHOTO_FOLDER_ID: 1_36btdabS4uYwzMC1Ann2ejNlKc4Lq3J
+          CANVA_MASTER_FOLDER_ID: FAHWsCPPCko
+          CANVA_MB01_SOURCE_DESIGN_ID: DAHWsPb3Osk

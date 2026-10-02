@@ -43,9 +43,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ reg
       return NextResponse.json({ error: "INVALID_PHOTO" }, { status: 400 });
     }
 
-    const validation = validatePhotoInput({ size: file.size, mimeType: file.type });
-    if (!validation.valid) return NextResponse.json({ error: validation.code, message: validation.message }, { status: 400 });
-    if (file.size > MAX_PREPARED_BYTES) return NextResponse.json({ error: "PREPARED_IMAGE_TOO_LARGE" }, { status: 413 });
+    // Opsional: foto asli (sebelum latar dihapus) disimpan sebagai cadangan, tidak tertaut ke Content Bridge.
+    const originalValue = form.get("original");
+    const original = originalValue instanceof File && originalValue.size > 0 ? originalValue : null;
+    for (const candidate of original ? [file, original] : [file]) {
+      const validation = validatePhotoInput({ size: candidate.size, mimeType: candidate.type });
+      if (!validation.valid) return NextResponse.json({ error: validation.code, message: validation.message }, { status: 400 });
+      if (candidate.size > MAX_PREPARED_BYTES) return NextResponse.json({ error: "PREPARED_IMAGE_TOO_LARGE" }, { status: 413 });
+    }
 
     const { register } = await params;
     const ctx = await context(session.user.id);
@@ -55,6 +60,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ reg
     const photoType = photoTypeValue as PhotoType;
     const fileName = buildPhotoFilename({ workerRegister: worker.workerRegister, workerName: worker.name, type: photoType, mimeType: file.type });
     const uploaded = await uploadImageToDrive({ accessToken: ctx.accessToken, folderId: ctx.folderId, fileName, contentType: file.type, bytes: await file.arrayBuffer() });
+    const backgroundRemoved = form.get("backgroundRemoved") === "1";
+    const originalUpload = original
+      ? await uploadImageToDrive({ accessToken: ctx.accessToken, folderId: ctx.folderId, fileName: buildPhotoFilename({ workerRegister: worker.workerRegister, workerName: worker.name, type: photoType, mimeType: original.type, original: true }), contentType: original.type, bytes: await original.arrayBuffer() })
+      : null;
 
     const before = await ctx.bridge.get(worker.workerRegister);
     const patch: Partial<BridgeRecord> = photoType === "PROFILE"
@@ -67,7 +76,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ reg
     const contentStatus = contentStatusAfterPhotoUpload({ photoType, currentStatus: before?.content_status, readinessStatus: readiness.status });
 
     await ctx.bridge.upsert({ worker_register: worker.workerRegister, ...patch, content_status: contentStatus, last_updated_by: session.user.email ?? session.user.id, last_updated_at: new Date().toISOString() });
-    await writeAudit({ workerRegister: worker.workerRegister, userId: session.user.id, action: "UPLOAD_WORKER_PHOTO", entityType: "DRIVE_FILE", entityId: uploaded.id, after: { photoType, fileName, contentStatus } });
+    await writeAudit({ workerRegister: worker.workerRegister, userId: session.user.id, action: "UPLOAD_WORKER_PHOTO", entityType: "DRIVE_FILE", entityId: uploaded.id, after: { photoType, fileName, contentStatus, backgroundRemoved, originalFileId: originalUpload?.id ?? null } });
 
     return NextResponse.json({ ok: true, file: uploaded, photoType, fileName, readiness });
   } catch (error) {

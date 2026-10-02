@@ -18,7 +18,8 @@ function cleanSegment(value: string) {
     .replace(/\s+/g, " ")
     .toUpperCase();
 }
-export function buildPhotoFilename(input: { workerRegister: string; workerName: string; type: PhotoType; mimeType: string }) {
+/** `original: true` = cadangan foto asli sebelum latar dihapus (tidak dipakai Canva). */
+export function buildPhotoFilename(input: { workerRegister: string; workerName: string; type: PhotoType; mimeType: string; original?: boolean }) {
   const extension = input.mimeType === "image/png" ? "png" : input.mimeType === "image/webp" ? "webp" : "jpg";
-  return `${cleanSegment(input.workerRegister)} - ${cleanSegment(input.workerName)} - ${input.type}.${extension}`;
+  return `${cleanSegment(input.workerRegister)} - ${cleanSegment(input.workerName)} - ${input.type}${input.original ? " - ASLI" : ""}.${extension}`;
 }

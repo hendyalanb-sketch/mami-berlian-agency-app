@@ -13,8 +13,9 @@ type PublicWorkerView = {
   salary: string;
 };
 
-function text(text: unknown, max = 120): CanvaAutofillValue {
-  return { type: "text", text: String(text ?? "").trim().slice(0, max) };
+/** Teks Autofill dipotong per kata pada batas yang sudah diuji dengan Autofill nyata di Canva. */
+function text(value: unknown, max: number): CanvaAutofillValue {
+  return { type: "text", text: fitWords(String(value ?? ""), max) };
 }
 
 function firstName(name: string) {
@@ -35,8 +36,17 @@ export function fitWords(value: string, max: number) {
   return (words[0] ?? "").slice(0, max);
 }
 
-// Batas satu baris pada flyer MB-02 (diuji dengan Autofill nyata di Canva).
-const FLYER_LIMITS = { name: 16, position: 26, placement: 28 } as const;
+/**
+ * Batas karakter per field Autofill, diukur dengan Autofill nyata di Canva (teks terpanjang tetap
+ * satu/dua baris tanpa menabrak elemen lain). Ubah bersama desain template + versi template di seed.
+ */
+export const CANVA_TEXT_LIMITS = {
+  "MB-01A": { headline: 21, origin: 26, specialty: 26, liveIn: 26, quote: 72, age: 10, ready: 24 },
+  "MB-01B": { profileLine: 30, skill: 32, headline: 48, name: 16, availability: 32, liveIn: 26, training: 24, document: 24 },
+  "MB-02": { name: 16, position: 26, placement: 28 },
+} as const;
+
+const FLYER_LIMITS = CANVA_TEXT_LIMITS["MB-02"];
 
 /** Nama di flyer: huruf kapital, dipendekkan per kata agar muat di pita nama. */
 export function flyerName(name: string) {
@@ -48,6 +58,13 @@ export function flyerPlacement(placement: string) {
   if (!value) return "";
   const withPrefix = `Penempatan ${value}`;
   return withPrefix.length <= FLYER_LIMITS.placement ? withPrefix : fitWords(value, FLYER_LIMITS.placement);
+}
+
+/** Headline MB-01A satu baris: versi terpendek yang masih memuat nama depan. */
+export function personalHeadline(name: string) {
+  const first = firstName(name);
+  const max = CANVA_TEXT_LIMITS["MB-01A"].headline;
+  return [`Kenalan dengan ${first}`, `Kenalan, ${first}`, first].find((candidate) => candidate.length <= max) ?? first.slice(0, max);
 }
 
 function buildBuiltinWorkerTemplateAutofill(input: {
@@ -69,45 +86,50 @@ function buildBuiltinWorkerTemplateAutofill(input: {
   const documentStatus = String(bridge.document_status ?? "").trim();
   const profileLine = [view.category, experienceLabel].filter(Boolean).join(" • ");
 
+  // Kode pekerja (worker_register) tidak boleh tampil di desain publik; tetap kunci internal saja.
+  // Field WORKER_CODE masih ada di dataset Canva (label lama tidak bisa dihapus lewat API), jadi selalu diisi kosong —
+  // ini juga mengosongkan badge kode di desain lama bila masih dipakai.
   const common: Record<string, CanvaAutofillValue> = {
     WORKER_PHOTO: { type: "image", asset_id: assetId },
-    WORKER_CODE: text(view.worker_register, 30),
+    WORKER_CODE: { type: "text", text: "" },
   };
 
   if (templateCode === "MB-02A" || templateCode === "MB-02B") {
     // Flyer katalog "Ready To Interview": nama, posisi, dan penempatan dalam huruf kapital seperti desain asli.
     return {
-      WORKER_PHOTO: common.WORKER_PHOTO,
-      WORKER_NAME: text(flyerName(view.name)),
-      WORKER_POSITION: text(fitWords((specialty || view.category).toUpperCase(), FLYER_LIMITS.position)),
-      WORKER_PLACEMENT: text(flyerPlacement(view.placement)),
+      ...common,
+      WORKER_NAME: text(flyerName(view.name), FLYER_LIMITS.name),
+      WORKER_POSITION: text((specialty || view.category).toUpperCase(), FLYER_LIMITS.position),
+      WORKER_PLACEMENT: text(flyerPlacement(view.placement), FLYER_LIMITS.placement),
     };
   }
 
   if (templateCode === "MB-01A") {
+    const limits = CANVA_TEXT_LIMITS["MB-01A"];
     return {
       ...common,
-      WORKER_HEADLINE: text(`Kenalan dengan ${firstName(view.name)}`, 45),
-      WORKER_ORIGIN: text(view.origin, 30),
-      WORKER_SPECIALTY: text(specialty, 32),
-      WORKER_LIVE_IN_STATUS: text(liveInStatus, 28),
-      WORKER_INTRO_QUOTE: text(workerQuote, 120),
-      WORKER_AGE: text(view.age, 18),
-      WORKER_READY_STATUS: text(readyStatus, 24),
+      WORKER_HEADLINE: text(personalHeadline(view.name), limits.headline),
+      WORKER_ORIGIN: text(view.origin, limits.origin),
+      WORKER_SPECIALTY: text(specialty, limits.specialty),
+      WORKER_LIVE_IN_STATUS: text(liveInStatus, limits.liveIn),
+      WORKER_INTRO_QUOTE: text(workerQuote, limits.quote),
+      WORKER_AGE: text(view.age, limits.age),
+      WORKER_READY_STATUS: text(readyStatus, limits.ready),
     };
   }
 
+  const limits = CANVA_TEXT_LIMITS["MB-01B"];
   return {
     ...common,
-    WORKER_PROFILE_LINE: text(profileLine, 55),
-    WORKER_SKILL_1: text(view.skills[0] ?? "", 48),
-    WORKER_HEADLINE: text(publicTitle || `${view.category} siap interview`, 72),
-    WORKER_NAME: text(view.name, 36),
-    WORKER_AVAILABILITY: text(availability, 54),
-    WORKER_LIVE_IN_STATUS: text(liveInStatus, 32),
-    WORKER_TRAINING_STATUS: text(trainingStatus, 42),
-    WORKER_SKILL_2: text(view.skills[1] ?? "", 48),
-    WORKER_DOCUMENT_STATUS: text(documentStatus, 42),
+    WORKER_PROFILE_LINE: text(profileLine, limits.profileLine),
+    WORKER_SKILL_1: text(view.skills[0] ?? "", limits.skill),
+    WORKER_HEADLINE: text(publicTitle || `${view.category} siap interview`, limits.headline),
+    WORKER_NAME: text(view.name, limits.name),
+    WORKER_AVAILABILITY: text(availability, limits.availability),
+    WORKER_LIVE_IN_STATUS: text(liveInStatus, limits.liveIn),
+    WORKER_TRAINING_STATUS: text(trainingStatus, limits.training),
+    WORKER_SKILL_2: text(view.skills[1] ?? "", limits.skill),
+    WORKER_DOCUMENT_STATUS: text(documentStatus, limits.document),
   };
 }
 
@@ -176,5 +198,6 @@ export type RenderTextPreview = Array<{ field: string; label: string; text: stri
  */
 export function buildWorkerTemplateTextPreview(input: Omit<Parameters<typeof buildWorkerTemplateAutofill>[0], "assetId">): RenderTextPreview {
   const payload = buildWorkerTemplateAutofill({ ...input, assetId: "PREVIEW" });
-  return Object.entries(payload).flatMap(([field, value]) => value.type === "text" ? [{ field, label: AUTOFILL_FIELD_LABELS[field] ?? field, text: value.text }] : []);
+  // WORKER_CODE selalu kosong (tidak ditampilkan di desain publik), jadi tidak perlu dipratinjau.
+  return Object.entries(payload).flatMap(([field, value]) => value.type === "text" && field !== "WORKER_CODE" ? [{ field, label: AUTOFILL_FIELD_LABELS[field] ?? field, text: value.text }] : []);
 }

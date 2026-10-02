@@ -100,16 +100,23 @@ The application flow is implemented in the isolated branch and validated by CI. 
 
 ## Canva templates
 
-| Code | Design | Purpose | Autofill fields |
-|---|---|---|---|
-| MB-01A | `DAHWxdqUjBU` | Worker profile, personal | 9 fields |
-| MB-01B | `DAHWxdxDo0A` | Worker profile, promo | 11 fields |
-| MB-02A | `DAHWz75MkSY` | Catalog flyer "Ready To Interview", blue | `WORKER_PHOTO`, `WORKER_NAME`, `WORKER_POSITION`, `WORKER_PLACEMENT` |
-| MB-02B | `DAHWzxuSgYw` | Catalog flyer "Ready To Interview", pink (ART Momong / Babysitter) | same as MB-02A |
+| Code | Version | Design | Purpose | Autofill fields |
+|---|---|---|---|---|
+| MB-01A | v5 | `DAHW1M7vzeE` | Worker profile, personal | 9 fields (incl. blank `WORKER_CODE`) |
+| MB-01B | v5 | `DAHW1NniltY` | Worker profile, promo | 11 fields (incl. blank `WORKER_CODE`) |
+| MB-02A | v4 | `DAHW1EbFCDY` | Catalog flyer "Ready To Interview", blue | `WORKER_PHOTO`, `WORKER_NAME`, `WORKER_POSITION`, `WORKER_PLACEMENT`, blank `WORKER_CODE` |
+| MB-02B | v4 | `DAHW1Idsl-4` | Catalog flyer "Ready To Interview", pink (ART Momong / Babysitter) | same as MB-02A |
 
 - MB-02A/B are single-page copies of `SAMPUL PEKERJA` (`DAHQAVPdSqQ`, pages 1 and 30). The source design is untouched.
-- Both were registered **inactive** on Neon staging. Run "Periksa Template" in Integrasi to activate them.
-- One-line text limits were measured with a real Autofill: name 16, position 26, placement 28 characters.
+- 2 Oct 2026 design pass (new copies; previous designs `DAHWxdqUjBU`, `DAHWxdxDo0A`, `DAHWz75MkSY`, `DAHWzxuSgYw` left unchanged for rollback):
+  - MB-02A/B: smaller repeated headline, larger photo frame, solid footer bar with "Chat WA untuk jadwalkan interview". MB-02B name band `#AD1457`, footer `#880E4F`, placement text `#6B0F35` (all ≥4.5:1; previously 1.6–2.5:1).
+  - MB-01A: 2×2 info grid instead of one overflowing row, clipped corner decorations removed; aligned to the MB-02 blue family (CTA `#1A6BD7`, 5.1:1; navy `#043372` footer with logo, website and handle).
+  - MB-01B: availability as a calm tag instead of an extra orange band, narrower photo column (no text collisions).
+  - The worker register code is not shown on any public design (owner decision); it stays the internal key only.
+  - All four use the official logo `MAHW1Wa9OfU` (`public/brand/mami-berlian-logo.png`) whose badge interior is opaque white. The older asset `MAHW0f6LSjE` is transparent inside and disappears on coloured backgrounds.
+  - Canva fonts cannot be changed through the API, so MB-01 and MB-02 still use their original typefaces.
+- Text limits (`CANVA_TEXT_LIMITS` in `worker-template-render.ts`) were measured with real Autofill using the longest realistic values. Staff input limits in `COPY_FIELDS` match them.
+- Templates must be re-checked with "Periksa Template" in Integrasi after re-seeding. Canva keeps the `WORKER_CODE` label in the dataset of these designs even after the element was deleted (it cannot be removed via API, copies keep it too), and the health check rejects unmapped fields. So `WORKER_CODE` stays a registered field that is always rendered as an empty string; this also blanks the code badge on older designs.
 
 ## Remaining provisioning / release blockers
 

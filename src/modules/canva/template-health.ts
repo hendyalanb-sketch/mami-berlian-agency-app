@@ -34,13 +34,20 @@ export const MB01B_REQUIRED_FIELDS = [
   "WORKER_DOCUMENT_STATUS",
 ] as const;
 
-/** Flyer katalog "Ready To Interview" (MB-02A biru, MB-02B pink) — sama dengan desain SAMPUL PEKERJA. */
+/** Flyer katalog "Ready To Interview" (MB-02A biru, MB-02B pink) — turunan desain SAMPUL PEKERJA. */
 export const MB02_REQUIRED_FIELDS = [
   "WORKER_PHOTO",
   "WORKER_NAME",
   "WORKER_POSITION",
   "WORKER_PLACEMENT",
+  "WORKER_CODE",
 ] as const;
+
+/**
+ * WORKER_CODE tetap terdaftar karena label Autofill-nya tersimpan permanen di dataset desain Canva (tidak bisa dihapus
+ * lewat API) dan health check menolak field yang tidak dipetakan. Nilainya selalu kosong: kode pekerja tidak tampil publik.
+ */
+export const BLANK_PUBLIC_FIELDS = ["WORKER_CODE"] as const;
 
 function expectedTypes(fields: readonly string[]) {
   return Object.fromEntries(fields.map((field) => [field, field === "WORKER_PHOTO" ? "image" : "text"])) as Record<string, FieldType>;

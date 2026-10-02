@@ -8,13 +8,12 @@ import { readinessFromBridge } from "@/modules/enrichment/serialization";
 import { downloadDriveFile, uploadImageToDrive } from "@/modules/google/drive-rest";
 import { getGoogleAccessToken, GoogleConnectionError } from "@/modules/google/oauth-token-service";
 import { contentStatusAfterPhotoUpload } from "@/modules/photo/content-status";
-import { buildPhotoFilename, PHOTO_TYPES, validatePhotoInput, type PhotoType } from "@/modules/photo/validation";
+import { buildPhotoFilename, MAX_UPLOAD_REQUEST_BYTES, PHOTO_TYPES, validatePhotoInput, type PhotoType } from "@/modules/photo/validation";
 import { getGoogleStorageSettings } from "@/modules/settings/service";
 import { WorkerSourceService } from "@/modules/workers/source-service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-const MAX_PREPARED_BYTES = 5 * 1024 * 1024;
 
 async function context(userId: string) {
   const registerId = process.env.GOOGLE_REGISTER_SPREADSHEET_ID;
@@ -49,8 +48,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ reg
     for (const candidate of original ? [file, original] : [file]) {
       const validation = validatePhotoInput({ size: candidate.size, mimeType: candidate.type });
       if (!validation.valid) return NextResponse.json({ error: validation.code, message: validation.message }, { status: 400 });
-      if (candidate.size > MAX_PREPARED_BYTES) return NextResponse.json({ error: "PREPARED_IMAGE_TOO_LARGE" }, { status: 413 });
     }
+    if (file.size + (original?.size ?? 0) > MAX_UPLOAD_REQUEST_BYTES) return NextResponse.json({ error: "PREPARED_IMAGE_TOO_LARGE" }, { status: 413 });
 
     const { register } = await params;
     const ctx = await context(session.user.id);

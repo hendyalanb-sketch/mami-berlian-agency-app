@@ -1,13 +1,14 @@
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { db } from "@/db/client";
 import { canvaTemplates, integrationHealth } from "@/db/schema";
+import { writeAudit } from "@/modules/audit/service";
 import { authOptions } from "@/lib/auth";
 import { isAdmin } from "@/lib/permissions";
 import { getCanvaAccessToken, CanvaConnectionError } from "@/modules/canva/oauth-token-service";
 import { getCanvaDesignDataset, CanvaApiError } from "@/modules/canva/rest";
-import { CANVA_WORKER_TEMPLATE_CODES, evaluateTemplateDatasetForCode, isWorkerTemplateCode } from "@/modules/canva/template-health";
+import { evaluateWorkerTemplateDataset } from "@/modules/canva/template-health";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,10 +16,9 @@ export const dynamic = "force-dynamic";
 async function runHealth(userId: string, activate: boolean) {
   if (!db) return { status: 503, body: { error: "DATABASE_NOT_CONFIGURED" } };
 
-  const templates = await db.select().from(canvaTemplates).where(inArray(canvaTemplates.code, [...CANVA_WORKER_TEMPLATE_CODES]));
-  const configuredCodes = new Set(templates.map((template) => template.code));
-  const missingTemplates = CANVA_WORKER_TEMPLATE_CODES.filter((code) => !configuredCodes.has(code));
-  if (!templates.length) return { status: 503, body: { error: "WORKER_TEMPLATES_NOT_CONFIGURED", missingTemplates: [...CANVA_WORKER_TEMPLATE_CODES] } };
+  const templates = await db.select().from(canvaTemplates);
+  const missingTemplates: string[] = [];
+  if (!templates.length) return { status: 503, body: { error: "WORKER_TEMPLATES_NOT_CONFIGURED", missingTemplates } };
 
   try {
     const accessToken = await getCanvaAccessToken(userId);
@@ -34,10 +34,13 @@ async function runHealth(userId: string, activate: boolean) {
     }>;
 
     for (const template of templates) {
-      if (!isWorkerTemplateCode(template.code)) continue;
       const designId = template.canvaTemplateId;
-      const dataset = await getCanvaDesignDataset({ accessToken, designId });
-      const health = evaluateTemplateDatasetForCode(template.code, dataset);
+      let dataset: Record<string, { type: string }> = {};
+      let providerError: string | null = null;
+      try { dataset = await getCanvaDesignDataset({ accessToken, designId }); }
+      catch (error) { providerError = error instanceof CanvaApiError ? error.code : "CANVA_HEALTH_FAILED"; }
+      const evaluated = evaluateWorkerTemplateDataset(template.requiredFieldsJson, dataset);
+      const health = providerError ? { valid: false, missing: [providerError], wrongType: [] as string[] } : evaluated;
       const issues = [...health.missing, ...health.wrongType.map((field) => `${field}:TYPE`)];
 
       await db.insert(integrationHealth).values({
@@ -49,6 +52,7 @@ async function runHealth(userId: string, activate: boolean) {
 
       if (activate) {
         await db.update(canvaTemplates).set({ isActive: health.valid, updatedAt: new Date() }).where(eq(canvaTemplates.id, template.id));
+        await writeAudit({ userId, action: "CANVA_TEMPLATE_HEALTH", entityType: "CANVA_TEMPLATE", entityId: template.id, before: { isActive: template.isActive }, after: { isActive: health.valid }, metadata: { templateCode: template.code, designId, ...health } });
       }
 
       results.push({
@@ -61,7 +65,7 @@ async function runHealth(userId: string, activate: boolean) {
       });
     }
 
-    const valid = missingTemplates.length === 0 && results.length === CANVA_WORKER_TEMPLATE_CODES.length && results.every((item) => item.valid);
+    const valid = results.length > 0 && results.every((item) => item.valid);
     const missing = [
       ...missingTemplates.map((code) => `${code}:TEMPLATE_NOT_CONFIGURED`),
       ...results.flatMap((item) => item.missing.map((field) => `${item.code}:${field}`)),

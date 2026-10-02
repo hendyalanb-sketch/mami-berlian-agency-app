@@ -1,3 +1,4 @@
+import type { GenerationOutputs } from "@/modules/generation/results";
 import {
   boolean,
   date,
@@ -185,6 +186,7 @@ export const generationJobs = pgTable("generation_jobs", {
   status: generationStatusEnum("status").default("QUEUED").notNull(),
   providerJobId: varchar("provider_job_id", { length: 180 }),
   canvaDesignId: varchar("canva_design_id", { length: 100 }),
+  resultJson: jsonb("result_json").$type<GenerationOutputs>().default({}).notNull(),
   errorCode: varchar("error_code", { length: 80 }),
   errorMessage: text("error_message"),
   requestedBy: uuid("requested_by").references(() => appUsers.id),

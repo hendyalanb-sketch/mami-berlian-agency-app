@@ -12,7 +12,7 @@ import {
   skills,
   workerCategories,
 } from "@/db/schema";
-import { MB01_REQUIRED_FIELDS } from "@/modules/canva/template-health";
+import { defaultTemplateFields, supportedTemplateFields } from "@/modules/canva/template-health";
 import { copyPresetsSchema } from "@/modules/content/copy-presets";
 import {
   APP_SETTING_KEYS,
@@ -169,7 +169,7 @@ export async function upsertPublishChannel(input: { code: string; name: string }
   return database.insert(publishChannels).values({ code, name, isActive: true }).onConflictDoUpdate({ target: publishChannels.code, set: { name, isActive: true, updatedAt: new Date() } }).returning();
 }
 
-export async function upsertCanvaTemplate(input: { code: string; name: string; canvaTemplateId: string; version: string; contentType: string }) {
+export async function upsertCanvaTemplate(input: { code: string; name: string; canvaTemplateId: string; version: string; contentType: string; requiredFieldsJson?: string[] }) {
   const database = requireDb();
   const code = normalizeTemplateCode(input.code);
   const name = input.name.trim();
@@ -179,7 +179,8 @@ export async function upsertCanvaTemplate(input: { code: string; name: string; c
   if (!code || !name || !canvaTemplateId || !version || !contentType) throw new MasterAdminError("INVALID_TEMPLATE_INPUT");
 
   const [existing] = await database.select().from(canvaTemplates).where(eq(canvaTemplates.code, code)).limit(1);
-  const requiredFieldsJson = code === "MB-01" ? [...MB01_REQUIRED_FIELDS] : existing?.requiredFieldsJson ?? [];
+  const requiredFieldsJson = [...new Set(input.requiredFieldsJson?.length ? input.requiredFieldsJson : existing?.requiredFieldsJson.length ? existing.requiredFieldsJson : defaultTemplateFields(contentType))];
+  if (!supportedTemplateFields(requiredFieldsJson)) throw new MasterAdminError("INVALID_TEMPLATE_FIELDS");
   if (existing) {
     return database.update(canvaTemplates).set({
       name,

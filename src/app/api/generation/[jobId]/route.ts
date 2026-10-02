@@ -6,6 +6,7 @@ import { getCanvaAccessToken, CanvaConnectionError } from "@/modules/canva/oauth
 import { getCanvaDesignAutofillJob, CanvaApiError } from "@/modules/canva/rest";
 import { failGeneration, finalizeGeneratedContent } from "@/modules/generation/finalize";
 import { getGenerationJob, updateGenerationJob } from "@/modules/generation/job-service";
+import { generationResult } from "@/modules/generation/results";
 import { getGoogleAccessToken, GoogleConnectionError } from "@/modules/google/oauth-token-service";
 
 export const runtime = "nodejs";
@@ -18,8 +19,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ job
   const job = await getGenerationJob(jobId).catch(() => null);
   if (!job) return NextResponse.json({ error: "JOB_NOT_FOUND" }, { status: 404 });
   if (job.requestedBy !== session.user.id) return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
-  if (job.status === "DONE") return NextResponse.json({ jobId: job.id, status: "DONE", designId: job.canvaDesignId });
+  if (job.status === "DONE") return NextResponse.json(generationResult(job));
   if (job.status === "ERROR") return NextResponse.json({ jobId: job.id, status: "ERROR", error: job.errorCode, message: job.errorMessage });
+  if (!job.providerJobId && job.startedAt && Date.now() - job.startedAt.getTime() > 5 * 60 * 1000) {
+    await updateGenerationJob(job.id, { status: "ERROR", errorCode: "GENERATION_INTERRUPTED", completedAt: new Date() });
+    return NextResponse.json({ jobId: job.id, status: "ERROR", error: "GENERATION_INTERRUPTED" });
+  }
   if (!job.providerJobId) return NextResponse.json({ jobId: job.id, status: job.status }, { status: 202 });
 
   const bridgeId = process.env.GOOGLE_BRIDGE_SPREADSHEET_ID;

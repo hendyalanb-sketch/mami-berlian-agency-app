@@ -57,7 +57,7 @@ const canvaTemplateRows = [
     requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_AGE","WORKER_ORIGIN","WORKER_CATEGORY","WORKER_SKILLS","WORKER_PLACEMENT","WORKER_SALARY","CTA_TEXT"],
     isActive: false,
   },
-  // MB-01A/B v5: salinan baru (grid info 2×2, palet biru seperti MB-02, footer navy + logo resmi, tanpa kode pekerja);
+  // MB-01A/B v5: salinan baru (grid info 2×2, palet biru seperti MB-02, footer navy + logo resmi, kode pekerja selalu kosong);
   // desain v3 lama tidak diubah.
   {
     code: "MB-01A",
@@ -65,7 +65,7 @@ const canvaTemplateRows = [
     canvaTemplateId: process.env.CANVA_MB01A_DESIGN_ID ?? "DAHW1M7vzeE",
     version: "v5",
     contentType: "WORKER_PROFILE_PERSONAL",
-    requiredFieldsJson: ["WORKER_HEADLINE","WORKER_ORIGIN","WORKER_SPECIALTY","WORKER_LIVE_IN_STATUS","WORKER_INTRO_QUOTE","WORKER_PHOTO","WORKER_AGE","WORKER_READY_STATUS"],
+    requiredFieldsJson: ["WORKER_HEADLINE","WORKER_ORIGIN","WORKER_SPECIALTY","WORKER_CODE","WORKER_LIVE_IN_STATUS","WORKER_INTRO_QUOTE","WORKER_PHOTO","WORKER_AGE","WORKER_READY_STATUS"],
     isActive: true,
   },
   {
@@ -74,7 +74,7 @@ const canvaTemplateRows = [
     canvaTemplateId: process.env.CANVA_MB01B_DESIGN_ID ?? "DAHW1NniltY",
     version: "v5",
     contentType: "WORKER_PROFILE_PROMO",
-    requiredFieldsJson: ["WORKER_PHOTO","WORKER_PROFILE_LINE","WORKER_SKILL_1","WORKER_HEADLINE","WORKER_NAME","WORKER_AVAILABILITY","WORKER_LIVE_IN_STATUS","WORKER_TRAINING_STATUS","WORKER_SKILL_2","WORKER_DOCUMENT_STATUS"],
+    requiredFieldsJson: ["WORKER_PHOTO","WORKER_PROFILE_LINE","WORKER_CODE","WORKER_SKILL_1","WORKER_HEADLINE","WORKER_NAME","WORKER_AVAILABILITY","WORKER_LIVE_IN_STATUS","WORKER_TRAINING_STATUS","WORKER_SKILL_2","WORKER_DOCUMENT_STATUS"],
     isActive: true,
   },
   // Flyer katalog "Ready To Interview": turunan 1 halaman dari desain SAMPUL PEKERJA (DAHQAVPdSqQ, tidak diubah).
@@ -86,7 +86,7 @@ const canvaTemplateRows = [
     canvaTemplateId: process.env.CANVA_MB02A_DESIGN_ID ?? "DAHW1EbFCDY",
     version: "v4",
     contentType: "WORKER_CATALOG_FLYER",
-    requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_POSITION","WORKER_PLACEMENT"],
+    requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_POSITION","WORKER_PLACEMENT","WORKER_CODE"],
     isActive: false,
   },
   {
@@ -95,7 +95,7 @@ const canvaTemplateRows = [
     canvaTemplateId: process.env.CANVA_MB02B_DESIGN_ID ?? "DAHW1Idsl-4",
     version: "v4",
     contentType: "WORKER_CATALOG_FLYER",
-    requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_POSITION","WORKER_PLACEMENT"],
+    requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_POSITION","WORKER_PLACEMENT","WORKER_CODE"],
     isActive: false,
   },
 ] as const;

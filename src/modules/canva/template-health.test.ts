@@ -38,3 +38,18 @@ describe("recommendedWorkerTemplateCode", () => {
     expect(recommendedWorkerTemplateCode(undefined)).toBe("MB-02A");
   });
 });
+
+
+describe("master-configured template fields", () => {
+  it("supports new codes while rejecting unmapped sensitive fields", async () => {
+    const { evaluateWorkerTemplateDataset, supportedTemplateFields, defaultTemplateFields } = await import("./template-health");
+    const fields = [...defaultTemplateFields("WORKER_CATALOG_FLYER")];
+    const available = Object.fromEntries(fields.map((field) => [field, { type: field === "WORKER_PHOTO" ? "image" : "text" }]));
+    expect(supportedTemplateFields(fields)).toBe(true);
+    expect(evaluateWorkerTemplateDataset(fields, available).valid).toBe(true);
+    expect(evaluateWorkerTemplateDataset(fields, { ...available, NIK: { type: "text" } }).valid).toBe(false);
+    expect(supportedTemplateFields(["WORKER_NAME", "NIK"])).toBe(false);
+    expect(evaluateWorkerTemplateDataset([], {}).valid).toBe(false);
+    expect(evaluateWorkerTemplateDataset(fields, { ...available, WORKER_PHOTO: { type: "text" } }).wrongType).toEqual(["WORKER_PHOTO"]);
+  });
+});

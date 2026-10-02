@@ -102,9 +102,9 @@ The application flow is implemented in the isolated branch and validated by CI. 
 
 | Code | Version | Design | Purpose | Autofill fields |
 |---|---|---|---|---|
-| MB-01A | v5 | `DAHW1M7vzeE` | Worker profile, personal | 8 fields |
-| MB-01B | v5 | `DAHW1NniltY` | Worker profile, promo | 10 fields |
-| MB-02A | v4 | `DAHW1EbFCDY` | Catalog flyer "Ready To Interview", blue | `WORKER_PHOTO`, `WORKER_NAME`, `WORKER_POSITION`, `WORKER_PLACEMENT` |
+| MB-01A | v5 | `DAHW1M7vzeE` | Worker profile, personal | 9 fields (incl. blank `WORKER_CODE`) |
+| MB-01B | v5 | `DAHW1NniltY` | Worker profile, promo | 11 fields (incl. blank `WORKER_CODE`) |
+| MB-02A | v4 | `DAHW1EbFCDY` | Catalog flyer "Ready To Interview", blue | `WORKER_PHOTO`, `WORKER_NAME`, `WORKER_POSITION`, `WORKER_PLACEMENT`, blank `WORKER_CODE` |
 | MB-02B | v4 | `DAHW1Idsl-4` | Catalog flyer "Ready To Interview", pink (ART Momong / Babysitter) | same as MB-02A |
 
 - MB-02A/B are single-page copies of `SAMPUL PEKERJA` (`DAHQAVPdSqQ`, pages 1 and 30). The source design is untouched.
@@ -116,7 +116,7 @@ The application flow is implemented in the isolated branch and validated by CI. 
   - All four use the official logo `MAHW1Wa9OfU` (`public/brand/mami-berlian-logo.png`) whose badge interior is opaque white. The older asset `MAHW0f6LSjE` is transparent inside and disappears on coloured backgrounds.
   - Canva fonts cannot be changed through the API, so MB-01 and MB-02 still use their original typefaces.
 - Text limits (`CANVA_TEXT_LIMITS` in `worker-template-render.ts`) were measured with real Autofill using the longest realistic values. Staff input limits in `COPY_FIELDS` match them.
-- Templates must be re-checked with "Periksa Template" in Integrasi after re-seeding. Canva still lists a stale `WORKER_CODE` label in the dataset of these designs; it is not required and is never filled.
+- Templates must be re-checked with "Periksa Template" in Integrasi after re-seeding. Canva keeps the `WORKER_CODE` label in the dataset of these designs even after the element was deleted (it cannot be removed via API, copies keep it too), and the health check rejects unmapped fields. So `WORKER_CODE` stays a registered field that is always rendered as an empty string; this also blanks the code badge on older designs.
 
 ## Remaining provisioning / release blockers
 

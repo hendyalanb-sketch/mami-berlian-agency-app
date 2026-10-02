@@ -31,7 +31,7 @@ describe("worker Canva render payload", () => {
     expect(result.WORKER_HEADLINE).toEqual({ type: "text", text: "Kenalan dengan Nilam" });
     expect(result.WORKER_SPECIALTY).toEqual({ type: "text", text: "ART Momong Anak" });
     expect(result.WORKER_INTRO_QUOTE).toEqual({ type: "text", text: bridge.public_description });
-    expect(Object.keys(result)).toHaveLength(8);
+    expect(Object.keys(result)).toHaveLength(9);
   });
 
   it("builds MB-01B render-only profile line and first two skills", () => {
@@ -40,7 +40,7 @@ describe("worker Canva render payload", () => {
     expect(result.WORKER_SKILL_1).toEqual({ type: "text", text: "Momong Anak" });
     expect(result.WORKER_SKILL_2).toEqual({ type: "text", text: "Bersih Rumah" });
     expect(result.WORKER_NAME).toEqual({ type: "text", text: "Nilam Anggraini" });
-    expect(Object.keys(result)).toHaveLength(10);
+    expect(Object.keys(result)).toHaveLength(11);
   });
 
   it("limits free-copy fields to their Canva-safe lengths", () => {
@@ -61,6 +61,7 @@ describe("worker Canva render payload", () => {
         WORKER_NAME: { type: "text", text: "NILAM ANGGRAINI" },
         WORKER_POSITION: { type: "text", text: "ART MOMONG ANAK" },
         WORKER_PLACEMENT: { type: "text", text: "Penempatan SURABAYA" },
+        WORKER_CODE: { type: "text", text: "" },
       });
     }
   });
@@ -107,7 +108,7 @@ describe("Canva text limits", () => {
   it("never puts the worker register code on a public design", () => {
     for (const templateCode of ["MB-01A", "MB-01B", "MB-02A", "MB-02B"] as const) {
       const result = buildWorkerTemplateAutofill({ templateCode, assetId: "MA_TEST", view, bridge });
-      expect(result).not.toHaveProperty("WORKER_CODE");
+      expect(result.WORKER_CODE).toEqual({ type: "text", text: "" });
       expect(Object.values(result).some((value) => value.type === "text" && value.text.includes(view.worker_register))).toBe(false);
     }
   });
@@ -134,5 +135,21 @@ describe("buildWorkerTemplateTextPreview", () => {
     expect(preview.map((item) => item.field)).not.toContain("WORKER_PHOTO");
     for (const item of preview) expect(payload[item.field]).toEqual({ type: "text", text: item.text });
     expect(preview.find((item) => item.field === "WORKER_NAME")).toMatchObject({ label: "Nama", text: "NILAM ANGGRAINI" });
+  });
+});
+
+
+describe("new registered Canva templates", () => {
+  it("uses the same catalog formatting for a new code without adding a code whitelist", () => {
+    const result = buildWorkerTemplateAutofill({ templateCode: "MB-NEW", contentType: "WORKER_CATALOG_FLYER", requiredFields: ["WORKER_PHOTO", "WORKER_NAME", "WORKER_POSITION", "WORKER_PLACEMENT"], assetId: "SHARED_PHOTO", view, bridge });
+    const { WORKER_CODE: _blankCode, ...builtinFlyer } = buildWorkerTemplateAutofill({ templateCode: "MB-02A", assetId: "SHARED_PHOTO", view, bridge });
+    expect(_blankCode).toEqual({ type: "text", text: "" });
+    expect(result).toEqual(builtinFlyer);
+  });
+  it("renders only configured public fields on a custom or legacy template", () => {
+    const result = buildWorkerTemplateAutofill({ templateCode: "CUSTOM-03", requiredFields: ["WORKER_PHOTO", "WORKER_NAME", "WORKER_SALARY", "CTA_TEXT"], assetId: "SHARED_PHOTO", view, bridge, ctaText: "Hubungi agency" });
+    expect(Object.keys(result)).toEqual(["WORKER_PHOTO", "WORKER_NAME", "WORKER_SALARY", "CTA_TEXT"]);
+    expect(result.CTA_TEXT).toEqual({ type: "text", text: "Hubungi agency" });
+    expect(() => buildWorkerTemplateAutofill({ templateCode: "CUSTOM-03", requiredFields: ["NIK"], assetId: "SHARED_PHOTO", view, bridge })).toThrow("INVALID_TEMPLATE_FIELDS");
   });
 });

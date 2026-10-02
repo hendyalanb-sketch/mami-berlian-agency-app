@@ -2,7 +2,7 @@ name: Content Ops CI
 
 on:
   push:
-    branches: [content-ops-v3]
+    branches: [content-ops-v3, feat/generate-all-templates]
   pull_request:
     branches: [main]
 
@@ -25,6 +25,24 @@ jobs:
         run: npm run test
       - name: Lint
         run: npm run lint
+      - name: Install browser for mobile verification
+        run: npx --yes agent-browser install --with-deps
+      - name: Verify multi-template UI at mobile widths
+        run: |
+          npm run dev > /tmp/mba-next-dev.log 2>&1 &
+          MBA_DEV_PID=$!
+          trap 'kill "$MBA_DEV_PID" || true' EXIT
+          node scripts/verify-generation-batch.mjs
+        env:
+          NEXTAUTH_SECRET: ci-only-browser-test-secret
+          NEXTAUTH_URL: http://localhost:3000
+      - name: Upload mobile verification screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: multi-template-mobile
+          path: artifacts/batch-*.png
+          if-no-files-found: ignore
       - name: Build
         run: npm run build
         env:

@@ -57,11 +57,12 @@ const canvaTemplateRows = [
     requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_AGE","WORKER_ORIGIN","WORKER_CATEGORY","WORKER_SKILLS","WORKER_PLACEMENT","WORKER_SALARY","CTA_TEXT"],
     isActive: false,
   },
+  // MB-01A/B v4: salinan baru (grid info 2×2, CTA kontras tinggi, kode pekerja muat 24 karakter); desain v3 lama tidak diubah.
   {
     code: "MB-01A",
     name: "MB-01A — Personal",
-    canvaTemplateId: process.env.CANVA_MB01A_DESIGN_ID ?? "DAHWxdqUjBU",
-    version: "v3",
+    canvaTemplateId: process.env.CANVA_MB01A_DESIGN_ID ?? "DAHW1M7vzeE",
+    version: "v4",
     contentType: "WORKER_PROFILE_PERSONAL",
     requiredFieldsJson: ["WORKER_HEADLINE","WORKER_ORIGIN","WORKER_SPECIALTY","WORKER_CODE","WORKER_LIVE_IN_STATUS","WORKER_INTRO_QUOTE","WORKER_PHOTO","WORKER_AGE","WORKER_READY_STATUS"],
     isActive: true,
@@ -69,30 +70,31 @@ const canvaTemplateRows = [
   {
     code: "MB-01B",
     name: "MB-01B — Promo",
-    canvaTemplateId: process.env.CANVA_MB01B_DESIGN_ID ?? "DAHWxdxDo0A",
-    version: "v3",
+    canvaTemplateId: process.env.CANVA_MB01B_DESIGN_ID ?? "DAHW1NniltY",
+    version: "v4",
     contentType: "WORKER_PROFILE_PROMO",
     requiredFieldsJson: ["WORKER_PHOTO","WORKER_PROFILE_LINE","WORKER_CODE","WORKER_SKILL_1","WORKER_HEADLINE","WORKER_NAME","WORKER_AVAILABILITY","WORKER_LIVE_IN_STATUS","WORKER_TRAINING_STATUS","WORKER_SKILL_2","WORKER_DOCUMENT_STATUS"],
     isActive: true,
   },
-  // Flyer katalog "Ready To Interview": salinan 1 halaman dari desain SAMPUL PEKERJA (DAHQAVPdSqQ, tidak diubah).
+  // Flyer katalog "Ready To Interview": turunan 1 halaman dari desain SAMPUL PEKERJA (DAHQAVPdSqQ, tidak diubah).
+  // v3: salinan baru (kontras pita/footer, foto lebih besar, kode pekerja, CTA WA); desain v2 lama tidak diubah.
   // Fail-closed: aktif setelah health check Canva di menu Integrasi.
   {
     code: "MB-02A",
     name: "MB-02A — Ready To Interview (Biru)",
-    canvaTemplateId: process.env.CANVA_MB02A_DESIGN_ID ?? "DAHWz75MkSY",
-    version: "v2",
+    canvaTemplateId: process.env.CANVA_MB02A_DESIGN_ID ?? "DAHW1EbFCDY",
+    version: "v3",
     contentType: "WORKER_CATALOG_FLYER",
-    requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_POSITION","WORKER_PLACEMENT"],
+    requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_POSITION","WORKER_PLACEMENT","WORKER_CODE"],
     isActive: false,
   },
   {
     code: "MB-02B",
     name: "MB-02B — Ready To Interview (Pink)",
-    canvaTemplateId: process.env.CANVA_MB02B_DESIGN_ID ?? "DAHWzxuSgYw",
-    version: "v2",
+    canvaTemplateId: process.env.CANVA_MB02B_DESIGN_ID ?? "DAHW1Idsl-4",
+    version: "v3",
     contentType: "WORKER_CATALOG_FLYER",
-    requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_POSITION","WORKER_PLACEMENT"],
+    requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_POSITION","WORKER_PLACEMENT","WORKER_CODE"],
     isActive: false,
   },
 ] as const;

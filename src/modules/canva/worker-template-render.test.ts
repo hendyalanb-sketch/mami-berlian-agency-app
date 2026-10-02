@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildWorkerTemplateAutofill } from "./worker-template-render";
+import { COPY_FIELDS } from "@/modules/content/copy-presets";
+import { buildWorkerTemplateAutofill, CANVA_TEXT_LIMITS, personalHeadline } from "./worker-template-render";
 
 const view = {
   worker_register: "PMBA-018-ART",
@@ -49,7 +50,7 @@ describe("worker Canva render payload", () => {
       view,
       bridge: { ...bridge, worker_register: view.worker_register, public_description: "x".repeat(200) },
     });
-    expect(result.WORKER_INTRO_QUOTE).toEqual({ type: "text", text: "x".repeat(120) });
+    expect(result.WORKER_INTRO_QUOTE).toEqual({ type: "text", text: "x".repeat(72) });
   });
 
   it("builds the MB-02 Ready To Interview flyer in uppercase like the catalog design", () => {
@@ -60,6 +61,7 @@ describe("worker Canva render payload", () => {
         WORKER_NAME: { type: "text", text: "NILAM ANGGRAINI" },
         WORKER_POSITION: { type: "text", text: "ART MOMONG ANAK" },
         WORKER_PLACEMENT: { type: "text", text: "Penempatan SURABAYA" },
+        WORKER_CODE: { type: "text", text: "PMBA-018-ART" },
       });
     }
   });
@@ -83,6 +85,42 @@ describe("worker Canva render payload", () => {
     const known = buildWorkerTemplateAutofill({ templateCode: "MB-02B", assetId: "MA_TEST", view: { ...view, placement: "Seluruh Indonesia" }, bridge: { ...bridge, worker_specialty: "ART Momong (Anak & Lansia)" } });
     expect(known.WORKER_POSITION).toEqual({ type: "text", text: "ART MOMONG (ANAK & LANSIA)" });
     expect(known.WORKER_PLACEMENT).toEqual({ type: "text", text: "Penempatan SELURUH INDONESIA" });
+  });
+});
+
+describe("Canva text limits", () => {
+  it("cuts free copy at word boundaries instead of mid-word", () => {
+    const result = buildWorkerTemplateAutofill({
+      templateCode: "MB-01A",
+      assetId: "MA_TEST",
+      view,
+      bridge: { ...bridge, public_description: "Saya jujur, rajin, dan sabar. Sudah enam tahun merawat balita dan juga lansia di rumah." },
+    });
+    expect(result.WORKER_INTRO_QUOTE).toEqual({ type: "text", text: "Saya jujur, rajin, dan sabar. Sudah enam tahun merawat balita dan juga" });
+  });
+
+  it("keeps the MB-01A headline on one line and always names the worker", () => {
+    expect(personalHeadline("Siti Aminah")).toBe("Kenalan dengan Siti");
+    expect(personalHeadline("Nurhalizah Putri")).toBe("Kenalan, Nurhalizah");
+    expect(personalHeadline("Kusumaningrumwati")).toBe("Kusumaningrumwati");
+  });
+
+  it("fits the longest register code tested in the badges", () => {
+    const result = buildWorkerTemplateAutofill({ templateCode: "MB-02B", assetId: "MA_TEST", view: { ...view, worker_register: "PMBA-0035-SUSBL-INFAL" }, bridge });
+    expect(result.WORKER_CODE).toEqual({ type: "text", text: "PMBA-0035-SUSBL-INFAL" });
+  });
+
+  it("staff input limits never exceed what the templates can render", () => {
+    const rendered: Record<(typeof COPY_FIELDS)[number]["key"], number> = {
+      publicTitle: CANVA_TEXT_LIMITS["MB-01B"].headline,
+      workerQuote: CANVA_TEXT_LIMITS["MB-01A"].quote,
+      specialty: Math.min(CANVA_TEXT_LIMITS["MB-01A"].specialty, CANVA_TEXT_LIMITS["MB-02"].position),
+      liveInStatus: Math.min(CANVA_TEXT_LIMITS["MB-01A"].liveIn, CANVA_TEXT_LIMITS["MB-01B"].liveIn),
+      availability: CANVA_TEXT_LIMITS["MB-01B"].availability,
+      trainingStatus: CANVA_TEXT_LIMITS["MB-01B"].training,
+      documentStatus: CANVA_TEXT_LIMITS["MB-01B"].document,
+    };
+    for (const field of COPY_FIELDS) expect(field.maxLength, field.key).toBeLessThanOrEqual(rendered[field.key]);
   });
 });
 

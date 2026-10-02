@@ -100,16 +100,21 @@ The application flow is implemented in the isolated branch and validated by CI. 
 
 ## Canva templates
 
-| Code | Design | Purpose | Autofill fields |
-|---|---|---|---|
-| MB-01A | `DAHWxdqUjBU` | Worker profile, personal | 9 fields |
-| MB-01B | `DAHWxdxDo0A` | Worker profile, promo | 11 fields |
-| MB-02A | `DAHWz75MkSY` | Catalog flyer "Ready To Interview", blue | `WORKER_PHOTO`, `WORKER_NAME`, `WORKER_POSITION`, `WORKER_PLACEMENT` |
-| MB-02B | `DAHWzxuSgYw` | Catalog flyer "Ready To Interview", pink (ART Momong / Babysitter) | same as MB-02A |
+| Code | Version | Design | Purpose | Autofill fields |
+|---|---|---|---|---|
+| MB-01A | v4 | `DAHW1M7vzeE` | Worker profile, personal | 9 fields |
+| MB-01B | v4 | `DAHW1NniltY` | Worker profile, promo | 11 fields |
+| MB-02A | v3 | `DAHW1EbFCDY` | Catalog flyer "Ready To Interview", blue | `WORKER_PHOTO`, `WORKER_NAME`, `WORKER_POSITION`, `WORKER_PLACEMENT`, `WORKER_CODE` |
+| MB-02B | v3 | `DAHW1Idsl-4` | Catalog flyer "Ready To Interview", pink (ART Momong / Babysitter) | same as MB-02A |
 
 - MB-02A/B are single-page copies of `SAMPUL PEKERJA` (`DAHQAVPdSqQ`, pages 1 and 30). The source design is untouched.
-- Both were registered **inactive** on Neon staging. Run "Periksa Template" in Integrasi to activate them.
-- One-line text limits were measured with a real Autofill: name 16, position 26, placement 28 characters.
+- 2 Oct 2026 design pass (new copies; previous designs `DAHWxdqUjBU`, `DAHWxdxDo0A`, `DAHWz75MkSY`, `DAHWzxuSgYw` left unchanged for rollback):
+  - MB-02A/B: smaller repeated headline, larger photo frame, solid footer bar with "Chat WA untuk jadwalkan interview", worker code badge (`WORKER_CODE`). MB-02B name band `#AD1457`, footer `#880E4F`, placement text `#6B0F35` (all ≥4.5:1; previously 1.6–2.5:1).
+  - MB-01A: 2×2 info grid instead of one overflowing row, CTA `#C2410C` (5.2:1), wider code badge, clipped corner decorations removed.
+  - MB-01B: availability as a calm tag instead of an extra orange band, narrower photo column (no text collisions), code moved into the footer.
+  - All four use the official logo asset `MAHW0f6LSjE`.
+- Text limits (`CANVA_TEXT_LIMITS` in `worker-template-render.ts`) were measured with real Autofill using the longest realistic values (e.g. code `PMBA-0035-SUSBL-INFAL`). Staff input limits in `COPY_FIELDS` match them.
+- Templates must be re-checked with "Periksa Template" in Integrasi after re-seeding; MB-02 now requires `WORKER_CODE`, so an old design fails closed.
 
 ## Remaining provisioning / release blockers
 

@@ -10,14 +10,18 @@ import { z } from "zod";
  */
 export const COPY_PRESETS_SETTING_KEY = "content.copy_presets";
 
+/**
+ * maxLength = batas terkecil field ini di template Canva (CANVA_TEXT_LIMITS), agar teks yang diketik staf
+ * tidak terpotong diam-diam saat Generate. Server tetap menerima nilai lama yang lebih panjang; render memotong per kata.
+ */
 export const COPY_FIELDS = [
-  { key: "publicTitle", label: "Headline promosi", maxLength: 72, factual: false },
-  { key: "workerQuote", label: "Kata-kata pekerja", maxLength: 120, factual: false },
-  { key: "specialty", label: "Spesialisasi singkat", maxLength: 40, factual: false },
-  { key: "liveInStatus", label: "Status menginap", maxLength: 32, factual: true },
-  { key: "availability", label: "Ketersediaan mulai", maxLength: 54, factual: true },
-  { key: "trainingStatus", label: "Status training", maxLength: 42, factual: true },
-  { key: "documentStatus", label: "Status dokumen", maxLength: 42, factual: true },
+  { key: "publicTitle", label: "Headline promosi", maxLength: 48, factual: false },
+  { key: "workerQuote", label: "Kata-kata pekerja", maxLength: 72, factual: false },
+  { key: "specialty", label: "Spesialisasi singkat", maxLength: 26, factual: false },
+  { key: "liveInStatus", label: "Status menginap", maxLength: 26, factual: true },
+  { key: "availability", label: "Ketersediaan mulai", maxLength: 32, factual: true },
+  { key: "trainingStatus", label: "Status training", maxLength: 24, factual: true },
+  { key: "documentStatus", label: "Status dokumen", maxLength: 24, factual: true },
 ] as const;
 
 export type CopyFieldKey = (typeof COPY_FIELDS)[number]["key"];
@@ -43,7 +47,7 @@ export const COPY_PRESETS_DEFAULTS: CopyPresets = {
   },
   workerQuote: {
     default: [
-      "Saya jujur, rajin, dan siap bekerja sepenuh hati untuk keluarga Bapak/Ibu.",
+      "Saya jujur, rajin, dan siap bekerja sepenuh hati untuk keluarga.",
       "Saya mau belajar dan menyesuaikan dengan kebiasaan keluarga.",
     ],
     byCategory: {
@@ -51,17 +55,17 @@ export const COPY_PRESETS_DEFAULTS: CopyPresets = {
         "Saya terbiasa bekerja rapi dan cekatan. Rumah bersih, keluarga nyaman.",
         "Saya senang memasak dan menjaga rumah tetap bersih setiap hari.",
       ],
-      ART_MOMONG: ["Saya sayang anak-anak dan terbiasa mengurus rumah sekaligus momong."],
+      ART_MOMONG: ["Saya sayang anak dan terbiasa mengurus rumah sekaligus momong."],
       BABYSITTER: [
-        "Saya sabar dan telaten. Anak Bapak/Ibu saya jaga seperti keluarga sendiri.",
+        "Saya sabar dan telaten. Anak Bapak/Ibu saya jaga seperti keluarga.",
         "Saya senang bermain dan mendampingi anak belajar setiap hari.",
       ],
       SUSTER_LANSIA: [
-        "Saya sabar merawat orang tua: bantu makan, mandi, dan minum obat tepat waktu.",
+        "Saya sabar membantu lansia makan, mandi, dan minum obat tepat waktu.",
         "Merawat lansia bagi saya ibadah. Saya tulus dan telaten.",
       ],
       SUSTER_PASIEN: ["Saya terbiasa merawat pasien dengan sabar, bersih, dan teliti."],
-      INFAL: ["Saya siap membantu sementara, bisa langsung kerja dan cepat menyesuaikan."],
+      INFAL: ["Saya siap membantu sementara, bisa langsung kerja & cepat beradaptasi."],
     },
   },
   specialty: {
@@ -70,22 +74,22 @@ export const COPY_PRESETS_DEFAULTS: CopyPresets = {
       ART: ["ART Bersih Rumah & Masak"],
       ART_MOMONG: ["ART Momong Anak"],
       BABYSITTER: ["Babysitter Bayi & Balita"],
-      SUSTER_LANSIA: ["Perawat & Pendamping Lansia"],
+      SUSTER_LANSIA: ["Pendamping Lansia"],
       SUSTER_PASIEN: ["Perawat Pasien di Rumah"],
-      INFAL: ["Infal / Pengganti Sementara"],
+      INFAL: ["Infal / Pengganti"],
     },
   },
-  liveInStatus: { default: ["Siap menginap", "Bisa pulang-pergi (PP)", "Menginap atau PP, fleksibel"], byCategory: {} },
+  liveInStatus: { default: ["Siap menginap", "Bisa pulang-pergi (PP)", "Menginap / PP, fleksibel"], byCategory: {} },
   availability: {
     default: ["Siap mulai minggu ini", "Siap interview & mulai segera", "Bisa langsung kerja", "Siap mulai bulan depan"],
     byCategory: {},
   },
   trainingStatus: {
-    default: ["Lulusan LPK Mami Berlian", "Terlatih & bersertifikat", "Sudah dibekali pelatihan kerja"],
+    default: ["Lulusan LPK Mami Berlian", "Terlatih & bersertifikat", "Sudah ikut pelatihan"],
     byCategory: {},
   },
   documentStatus: {
-    default: ["Dokumen lengkap & terverifikasi", "KTP & KK lengkap", "Dokumen lengkap, siap kerja"],
+    default: ["Dokumen terverifikasi", "KTP & KK lengkap", "Dokumen lengkap"],
     byCategory: {},
   },
 };

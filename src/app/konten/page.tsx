@@ -18,6 +18,9 @@ const templateDescription: Record<string, string> = {
   "MB-01B": "Promo: nama, pengalaman, skill, ketersediaan, dokumen.",
   "MB-02A": "Flyer katalog Ready To Interview (biru): foto, nama, posisi, penempatan.",
   "MB-02B": "Flyer katalog Ready To Interview (pink), untuk ART Momong/Babysitter.",
+  "MB-04A": "Kartu kandidat persegi 1:1 untuk grup FB/katalog WA: + ketersediaan dan status menginap.",
+  "MB-05A": "Story/Status WA 9:16 (biru): foto, nama, posisi, penempatan, usia, asal, 2 keahlian.",
+  "MB-05B": "Story/Status WA 9:16 (pink), untuk ART Momong/Babysitter.",
 };
 
 export default async function ContentPage() {

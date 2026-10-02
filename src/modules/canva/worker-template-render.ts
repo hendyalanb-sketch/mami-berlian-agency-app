@@ -1,6 +1,6 @@
 import type { BridgeRecord } from "@/modules/bridge/content-bridge-service";
 import type { CanvaAutofillValue } from "@/modules/canva/rest";
-import { defaultTemplateFields, getTemplateContract, isWorkerTemplateCode } from "@/modules/canva/template-health";
+import { CATALOG_FLYER_TEMPLATE_CODES, defaultTemplateFields, getTemplateContract, isWorkerTemplateCode } from "@/modules/canva/template-health";
 
 type PublicWorkerView = {
   worker_register: string;
@@ -145,7 +145,7 @@ export function buildWorkerTemplateAutofill(input: {
 }): Record<string, CanvaAutofillValue> {
   const fields = input.requiredFields ?? (isWorkerTemplateCode(input.templateCode) ? getTemplateContract(input.templateCode).requiredFields : defaultTemplateFields(input.contentType ?? "PEKERJA_READY"));
   const personal = input.contentType === "WORKER_PROFILE_PERSONAL" || input.templateCode === "MB-01A";
-  const flyer = input.contentType === "WORKER_CATALOG_FLYER" || ["MB-02A", "MB-02B"].includes(input.templateCode);
+  const flyer = input.contentType === "WORKER_CATALOG_FLYER" || CATALOG_FLYER_TEMPLATE_CODES.includes(input.templateCode);
   const all = {
     ...buildBuiltinWorkerTemplateAutofill({ ...input, templateCode: "MB-01A" }),
     ...buildBuiltinWorkerTemplateAutofill({ ...input, templateCode: "MB-01B" }),

@@ -106,6 +106,13 @@ The application flow is implemented in the isolated branch and validated by CI. 
 | MB-01B | v5 | `DAHW1NniltY` | Worker profile, promo | 11 fields (incl. blank `WORKER_CODE`) |
 | MB-02A | v4 | `DAHW1EbFCDY` | Catalog flyer "Ready To Interview", blue | `WORKER_PHOTO`, `WORKER_NAME`, `WORKER_POSITION`, `WORKER_PLACEMENT`, blank `WORKER_CODE` |
 | MB-02B | v4 | `DAHW1Idsl-4` | Catalog flyer "Ready To Interview", pink (ART Momong / Babysitter) | same as MB-02A |
+| MB-04A | v1 | `DAHW1hYz7NA` | Square 1:1 candidate card (Facebook groups, WhatsApp catalog) | MB-05 fields + `WORKER_AVAILABILITY`, `WORKER_LIVE_IN_STATUS` |
+| MB-05A | v1 | `DAHW1h5PBG0` | Story / WhatsApp Status 9:16, blue | MB-02 fields (no `WORKER_CODE`) + `WORKER_AGE`, `WORKER_ORIGIN`, `WORKER_SKILL_1`, `WORKER_SKILL_2` |
+| MB-05B | v1 | `DAHW1qx8qt8` | Story / WhatsApp Status 9:16, pink | same as MB-05A |
+
+- `MB-03A` ("Editorial Ivory", `DAHW1g-NTm8`) and `MB-03B` ("Fresh Sage", `DAHW1srYplk`) exist only as Master Data rows (added through the admin UI on 2 Oct 2026); they are not code-defined contracts, so the Story templates use MB-05 to avoid colliding with them.
+
+- MB-05A/B and MB-04A (2 Oct 2026) are built from a clean, unlabelled copy of `SAMPUL PEKERJA` page 1, so their datasets have no stale `WORKER_CODE` label. They use content type `WORKER_CATALOG_FLYER` (uppercase name/position, "Penempatan …" placement) and the same measured limits; all were stress-tested with the longest values (16-char name, 26-char position/origin, 28-char placement, 32-char skills/availability). Story layouts keep logo/CTA inside the IG/WA safe zones. Value texts are plain straight text (the reused "Ready/Interview" elements had a curved-text effect and were replaced).
 
 - MB-02A/B are single-page copies of `SAMPUL PEKERJA` (`DAHQAVPdSqQ`, pages 1 and 30). The source design is untouched.
 - 2 Oct 2026 design pass (new copies; previous designs `DAHWxdqUjBU`, `DAHWxdxDo0A`, `DAHWz75MkSY`, `DAHWzxuSgYw` left unchanged for rollback):

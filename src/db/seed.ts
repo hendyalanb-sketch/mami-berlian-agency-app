@@ -98,6 +98,35 @@ const canvaTemplateRows = [
     requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_POSITION","WORKER_PLACEMENT","WORKER_CODE"],
     isActive: false,
   },
+  // MB-05A/B: Story/Status WA 9:16; MB-04A: kartu kandidat persegi 1:1 (FB grup/katalog WA). Dibuat dari salinan bersih
+  // SAMPUL PEKERJA (tanpa label lama, jadi tanpa WORKER_CODE). Teks memakai format flyer (nama/posisi kapital).
+  {
+    code: "MB-05A",
+    name: "MB-05A — Story Siap Interview (Biru)",
+    canvaTemplateId: process.env.CANVA_MB05A_DESIGN_ID ?? "DAHW1h5PBG0",
+    version: "v1",
+    contentType: "WORKER_CATALOG_FLYER",
+    requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_POSITION","WORKER_PLACEMENT","WORKER_AGE","WORKER_ORIGIN","WORKER_SKILL_1","WORKER_SKILL_2"],
+    isActive: false,
+  },
+  {
+    code: "MB-05B",
+    name: "MB-05B — Story Siap Interview (Pink)",
+    canvaTemplateId: process.env.CANVA_MB05B_DESIGN_ID ?? "DAHW1qx8qt8",
+    version: "v1",
+    contentType: "WORKER_CATALOG_FLYER",
+    requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_POSITION","WORKER_PLACEMENT","WORKER_AGE","WORKER_ORIGIN","WORKER_SKILL_1","WORKER_SKILL_2"],
+    isActive: false,
+  },
+  {
+    code: "MB-04A",
+    name: "MB-04A — Kartu Kandidat (Persegi)",
+    canvaTemplateId: process.env.CANVA_MB04A_DESIGN_ID ?? "DAHW1hYz7NA",
+    version: "v1",
+    contentType: "WORKER_CATALOG_FLYER",
+    requiredFieldsJson: ["WORKER_PHOTO","WORKER_NAME","WORKER_POSITION","WORKER_PLACEMENT","WORKER_AGE","WORKER_ORIGIN","WORKER_AVAILABILITY","WORKER_LIVE_IN_STATUS","WORKER_SKILL_1","WORKER_SKILL_2"],
+    isActive: false,
+  },
 ] as const;
 
 async function seedInitialAdmin() {

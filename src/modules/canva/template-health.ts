@@ -1,4 +1,6 @@
-export const CANVA_WORKER_TEMPLATE_CODES = ["MB-01A", "MB-01B", "MB-02A", "MB-02B"] as const;
+export const CANVA_WORKER_TEMPLATE_CODES = ["MB-01A", "MB-01B", "MB-02A", "MB-02B", "MB-04A", "MB-05A", "MB-05B"] as const;
+/** Template yang memakai format teks flyer katalog (nama/posisi/penempatan huruf kapital). */
+export const CATALOG_FLYER_TEMPLATE_CODES: readonly string[] = ["MB-02A", "MB-02B", "MB-04A", "MB-05A", "MB-05B"];
 export type CanvaWorkerTemplateCode = (typeof CANVA_WORKER_TEMPLATE_CODES)[number];
 
 type FieldType = "image" | "text";
@@ -43,6 +45,21 @@ export const MB02_REQUIRED_FIELDS = [
   "WORKER_CODE",
 ] as const;
 
+/** Story/Status WA 9:16 (MB-05A biru, MB-05B pink): flyer + usia, asal, dua keahlian. Tanpa WORKER_CODE (salinan bersih). */
+export const MB05_REQUIRED_FIELDS = [
+  "WORKER_PHOTO",
+  "WORKER_NAME",
+  "WORKER_POSITION",
+  "WORKER_PLACEMENT",
+  "WORKER_AGE",
+  "WORKER_ORIGIN",
+  "WORKER_SKILL_1",
+  "WORKER_SKILL_2",
+] as const;
+
+/** Kartu kandidat persegi 1:1 (MB-04A): Story + ketersediaan dan status menginap. */
+export const MB04_REQUIRED_FIELDS = [...MB05_REQUIRED_FIELDS, "WORKER_AVAILABILITY", "WORKER_LIVE_IN_STATUS"] as const;
+
 /**
  * WORKER_CODE tetap terdaftar karena label Autofill-nya tersimpan permanen di dataset desain Canva (tidak bisa dihapus
  * lewat API) dan health check menolak field yang tidak dipetakan. Nilainya selalu kosong: kode pekerja tidak tampil publik.
@@ -73,6 +90,21 @@ export const WORKER_TEMPLATE_CONTRACTS: Record<CanvaWorkerTemplateCode, Template
     name: "MB-02B — Ready To Interview (Pink)",
     requiredFields: MB02_REQUIRED_FIELDS,
     expectedTypes: expectedTypes(MB02_REQUIRED_FIELDS),
+  },
+  "MB-05A": {
+    name: "MB-05A — Story Siap Interview (Biru)",
+    requiredFields: MB05_REQUIRED_FIELDS,
+    expectedTypes: expectedTypes(MB05_REQUIRED_FIELDS),
+  },
+  "MB-05B": {
+    name: "MB-05B — Story Siap Interview (Pink)",
+    requiredFields: MB05_REQUIRED_FIELDS,
+    expectedTypes: expectedTypes(MB05_REQUIRED_FIELDS),
+  },
+  "MB-04A": {
+    name: "MB-04A — Kartu Kandidat (Persegi)",
+    requiredFields: MB04_REQUIRED_FIELDS,
+    expectedTypes: expectedTypes(MB04_REQUIRED_FIELDS),
   },
 };
 
@@ -116,7 +148,7 @@ export function evaluateTemplateDataset(dataset: Record<string, { type: string }
 
 
 export const LEGACY_REQUIRED_FIELDS = ["WORKER_PHOTO", "WORKER_NAME", "WORKER_AGE", "WORKER_ORIGIN", "WORKER_CATEGORY", "WORKER_SKILLS", "WORKER_PLACEMENT", "WORKER_SALARY", "CTA_TEXT"] as const;
-export const SUPPORTED_WORKER_FIELDS: string[] = [...new Set([...MB01A_REQUIRED_FIELDS, ...MB01B_REQUIRED_FIELDS, ...MB02_REQUIRED_FIELDS, ...LEGACY_REQUIRED_FIELDS])];
+export const SUPPORTED_WORKER_FIELDS: string[] = [...new Set([...MB01A_REQUIRED_FIELDS, ...MB01B_REQUIRED_FIELDS, ...MB02_REQUIRED_FIELDS, ...MB04_REQUIRED_FIELDS, ...LEGACY_REQUIRED_FIELDS])];
 
 export function defaultTemplateFields(contentType: string): readonly string[] {
   if (contentType === "WORKER_PROFILE_PERSONAL") return MB01A_REQUIRED_FIELDS;

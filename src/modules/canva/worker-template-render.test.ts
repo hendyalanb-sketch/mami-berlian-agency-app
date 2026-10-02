@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { COPY_FIELDS } from "@/modules/content/copy-presets";
+import { CANVA_WORKER_TEMPLATE_CODES } from "./template-health";
 import { buildWorkerTemplateAutofill, CANVA_TEXT_LIMITS, personalHeadline } from "./worker-template-render";
 
 const view = {
@@ -88,6 +89,38 @@ describe("worker Canva render payload", () => {
   });
 });
 
+describe("Story and square candidate templates", () => {
+  it("builds the MB-05 Story with flyer formatting plus age, origin and two skills", () => {
+    for (const templateCode of ["MB-05A", "MB-05B"] as const) {
+      const result = buildWorkerTemplateAutofill({ templateCode, assetId: "MA_TEST", view, bridge });
+      expect(result).toEqual({
+        WORKER_PHOTO: { type: "image", asset_id: "MA_TEST" },
+        WORKER_NAME: { type: "text", text: "NILAM ANGGRAINI" },
+        WORKER_POSITION: { type: "text", text: "ART MOMONG ANAK" },
+        WORKER_PLACEMENT: { type: "text", text: "Penempatan SURABAYA" },
+        WORKER_AGE: { type: "text", text: "24 Tahun" },
+        WORKER_ORIGIN: { type: "text", text: "Bojonegoro" },
+        WORKER_SKILL_1: { type: "text", text: "Momong Anak" },
+        WORKER_SKILL_2: { type: "text", text: "Bersih Rumah" },
+      });
+    }
+  });
+
+  it("adds availability and live-in status to the MB-04A square card", () => {
+    const result = buildWorkerTemplateAutofill({ templateCode: "MB-04A", assetId: "MA_TEST", view, bridge });
+    expect(Object.keys(result)).toHaveLength(10);
+    expect(result.WORKER_AVAILABILITY).toEqual({ type: "text", text: "Siap mulai minggu ini" });
+    expect(result.WORKER_LIVE_IN_STATUS).toEqual({ type: "text", text: "Siap menginap" });
+    expect(result.WORKER_NAME).toEqual({ type: "text", text: "NILAM ANGGRAINI" });
+  });
+
+  it("renders the same payload when the database row drives the fields", () => {
+    const fromCode = buildWorkerTemplateAutofill({ templateCode: "MB-04A", assetId: "MA_TEST", view, bridge });
+    const fromRow = buildWorkerTemplateAutofill({ templateCode: "MB-04A", contentType: "WORKER_CATALOG_FLYER", requiredFields: Object.keys(fromCode), assetId: "MA_TEST", view, bridge });
+    expect(fromRow).toEqual(fromCode);
+  });
+});
+
 describe("Canva text limits", () => {
   it("cuts free copy at word boundaries instead of mid-word", () => {
     const result = buildWorkerTemplateAutofill({
@@ -106,9 +139,9 @@ describe("Canva text limits", () => {
   });
 
   it("never puts the worker register code on a public design", () => {
-    for (const templateCode of ["MB-01A", "MB-01B", "MB-02A", "MB-02B"] as const) {
+    for (const templateCode of CANVA_WORKER_TEMPLATE_CODES) {
       const result = buildWorkerTemplateAutofill({ templateCode, assetId: "MA_TEST", view, bridge });
-      expect(result.WORKER_CODE).toEqual({ type: "text", text: "" });
+      if ("WORKER_CODE" in result) expect(result.WORKER_CODE).toEqual({ type: "text", text: "" });
       expect(Object.values(result).some((value) => value.type === "text" && value.text.includes(view.worker_register))).toBe(false);
     }
   });

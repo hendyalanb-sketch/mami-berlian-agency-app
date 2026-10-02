@@ -237,7 +237,7 @@ export function WorkerEnrichmentForm({ workerRegister, data, editable, onSaved }
     <section aria-labelledby="enrichment-public" className="space-y-5 rounded-2xl border border-pink-100 bg-pink-50/30 p-4">
       <div>
         <h3 id="enrichment-public" className="text-sm font-black text-brand-navy">Profil publik & Canva</h3>
-        <p className="mt-1 text-xs leading-5 text-slate-500">Teks ini tampil di desain profil MB-01A/MB-01B untuk calon majikan (flyer MB-02 memakai spesialisasi sebagai posisi). Ketuk rekomendasi untuk memakai, lalu sesuaikan bila perlu — atau ketik sendiri.</p>
+        <p className="mt-1 text-xs leading-5 text-slate-500">Teks ini tampil di desain profil MB-01A/MB-01B untuk calon majikan (flyer MB-02, Story MB-05, dan kartu MB-04 memakai spesialisasi sebagai posisi). Ketuk rekomendasi untuk memakai, lalu sesuaikan bila perlu — atau ketik sendiri.</p>
         {!form.category && <p className="mt-2 text-xs font-semibold text-amber-700">Pilih kategori dulu agar rekomendasinya lebih pas.</p>}
         {editable && <Button type="button" variant="secondary" className="mt-3 min-h-10 gap-2 text-xs" onClick={autofillPromo} disabled={!promoFillable}><Sparkles size={15} aria-hidden />Isi otomatis teks promosi</Button>}
       </div>

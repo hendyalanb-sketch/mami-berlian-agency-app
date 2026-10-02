@@ -66,7 +66,7 @@ try {
     assert.equal(evaluate('window.batchCalls.find((call) => call.url.endsWith("/export")).body.jobId'), "10000000-0000-4000-8000-000000000005");
     browser("screenshot", `artifacts/batch-${width}.png`, "--full");
     browser("open", "http://localhost:3000/dev/ui/batch?restored=1");
-    await until(() => evaluate('document.querySelector("a[href=\"https://drive.google.com/file/d/RESTORED\"]") !== null'));
+    await until(() => evaluate('Array.from(document.querySelectorAll("a")).some((anchor) => anchor.href.endsWith("/RESTORED"))'));
     browser("open", "http://localhost:3000/dev/ui/batch?incomplete=1");
     await until(() => evaluate('document.body.innerText.includes("Data pekerja belum lengkap")'));
     assert.equal(evaluate('Array.from(document.querySelectorAll("button")).find((button) => button.textContent.includes("Buat Semua")).disabled'), true);

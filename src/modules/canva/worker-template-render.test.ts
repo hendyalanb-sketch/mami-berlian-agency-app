@@ -31,7 +31,7 @@ describe("worker Canva render payload", () => {
     expect(result.WORKER_HEADLINE).toEqual({ type: "text", text: "Kenalan dengan Nilam" });
     expect(result.WORKER_SPECIALTY).toEqual({ type: "text", text: "ART Momong Anak" });
     expect(result.WORKER_INTRO_QUOTE).toEqual({ type: "text", text: bridge.public_description });
-    expect(Object.keys(result)).toHaveLength(9);
+    expect(Object.keys(result)).toHaveLength(8);
   });
 
   it("builds MB-01B render-only profile line and first two skills", () => {
@@ -40,7 +40,7 @@ describe("worker Canva render payload", () => {
     expect(result.WORKER_SKILL_1).toEqual({ type: "text", text: "Momong Anak" });
     expect(result.WORKER_SKILL_2).toEqual({ type: "text", text: "Bersih Rumah" });
     expect(result.WORKER_NAME).toEqual({ type: "text", text: "Nilam Anggraini" });
-    expect(Object.keys(result)).toHaveLength(11);
+    expect(Object.keys(result)).toHaveLength(10);
   });
 
   it("limits free-copy fields to their Canva-safe lengths", () => {
@@ -61,7 +61,6 @@ describe("worker Canva render payload", () => {
         WORKER_NAME: { type: "text", text: "NILAM ANGGRAINI" },
         WORKER_POSITION: { type: "text", text: "ART MOMONG ANAK" },
         WORKER_PLACEMENT: { type: "text", text: "Penempatan SURABAYA" },
-        WORKER_CODE: { type: "text", text: "PMBA-018-ART" },
       });
     }
   });
@@ -105,9 +104,12 @@ describe("Canva text limits", () => {
     expect(personalHeadline("Kusumaningrumwati")).toBe("Kusumaningrumwati");
   });
 
-  it("fits the longest register code tested in the badges", () => {
-    const result = buildWorkerTemplateAutofill({ templateCode: "MB-02B", assetId: "MA_TEST", view: { ...view, worker_register: "PMBA-0035-SUSBL-INFAL" }, bridge });
-    expect(result.WORKER_CODE).toEqual({ type: "text", text: "PMBA-0035-SUSBL-INFAL" });
+  it("never puts the worker register code on a public design", () => {
+    for (const templateCode of ["MB-01A", "MB-01B", "MB-02A", "MB-02B"] as const) {
+      const result = buildWorkerTemplateAutofill({ templateCode, assetId: "MA_TEST", view, bridge });
+      expect(result).not.toHaveProperty("WORKER_CODE");
+      expect(Object.values(result).some((value) => value.type === "text" && value.text.includes(view.worker_register))).toBe(false);
+    }
   });
 
   it("staff input limits never exceed what the templates can render", () => {

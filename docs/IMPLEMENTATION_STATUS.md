@@ -102,19 +102,21 @@ The application flow is implemented in the isolated branch and validated by CI. 
 
 | Code | Version | Design | Purpose | Autofill fields |
 |---|---|---|---|---|
-| MB-01A | v4 | `DAHW1M7vzeE` | Worker profile, personal | 9 fields |
-| MB-01B | v4 | `DAHW1NniltY` | Worker profile, promo | 11 fields |
-| MB-02A | v3 | `DAHW1EbFCDY` | Catalog flyer "Ready To Interview", blue | `WORKER_PHOTO`, `WORKER_NAME`, `WORKER_POSITION`, `WORKER_PLACEMENT`, `WORKER_CODE` |
-| MB-02B | v3 | `DAHW1Idsl-4` | Catalog flyer "Ready To Interview", pink (ART Momong / Babysitter) | same as MB-02A |
+| MB-01A | v5 | `DAHW1M7vzeE` | Worker profile, personal | 8 fields |
+| MB-01B | v5 | `DAHW1NniltY` | Worker profile, promo | 10 fields |
+| MB-02A | v4 | `DAHW1EbFCDY` | Catalog flyer "Ready To Interview", blue | `WORKER_PHOTO`, `WORKER_NAME`, `WORKER_POSITION`, `WORKER_PLACEMENT` |
+| MB-02B | v4 | `DAHW1Idsl-4` | Catalog flyer "Ready To Interview", pink (ART Momong / Babysitter) | same as MB-02A |
 
 - MB-02A/B are single-page copies of `SAMPUL PEKERJA` (`DAHQAVPdSqQ`, pages 1 and 30). The source design is untouched.
 - 2 Oct 2026 design pass (new copies; previous designs `DAHWxdqUjBU`, `DAHWxdxDo0A`, `DAHWz75MkSY`, `DAHWzxuSgYw` left unchanged for rollback):
-  - MB-02A/B: smaller repeated headline, larger photo frame, solid footer bar with "Chat WA untuk jadwalkan interview", worker code badge (`WORKER_CODE`). MB-02B name band `#AD1457`, footer `#880E4F`, placement text `#6B0F35` (all ≥4.5:1; previously 1.6–2.5:1).
-  - MB-01A: 2×2 info grid instead of one overflowing row, CTA `#C2410C` (5.2:1), wider code badge, clipped corner decorations removed.
-  - MB-01B: availability as a calm tag instead of an extra orange band, narrower photo column (no text collisions), code moved into the footer.
-  - All four use the official logo asset `MAHW0f6LSjE`.
-- Text limits (`CANVA_TEXT_LIMITS` in `worker-template-render.ts`) were measured with real Autofill using the longest realistic values (e.g. code `PMBA-0035-SUSBL-INFAL`). Staff input limits in `COPY_FIELDS` match them.
-- Templates must be re-checked with "Periksa Template" in Integrasi after re-seeding; MB-02 now requires `WORKER_CODE`, so an old design fails closed.
+  - MB-02A/B: smaller repeated headline, larger photo frame, solid footer bar with "Chat WA untuk jadwalkan interview". MB-02B name band `#AD1457`, footer `#880E4F`, placement text `#6B0F35` (all ≥4.5:1; previously 1.6–2.5:1).
+  - MB-01A: 2×2 info grid instead of one overflowing row, clipped corner decorations removed; aligned to the MB-02 blue family (CTA `#1A6BD7`, 5.1:1; navy `#043372` footer with logo, website and handle).
+  - MB-01B: availability as a calm tag instead of an extra orange band, narrower photo column (no text collisions).
+  - The worker register code is not shown on any public design (owner decision); it stays the internal key only.
+  - All four use the official logo `MAHW1Wa9OfU` (`public/brand/mami-berlian-logo.png`) whose badge interior is opaque white. The older asset `MAHW0f6LSjE` is transparent inside and disappears on coloured backgrounds.
+  - Canva fonts cannot be changed through the API, so MB-01 and MB-02 still use their original typefaces.
+- Text limits (`CANVA_TEXT_LIMITS` in `worker-template-render.ts`) were measured with real Autofill using the longest realistic values. Staff input limits in `COPY_FIELDS` match them.
+- Templates must be re-checked with "Periksa Template" in Integrasi after re-seeding. Canva still lists a stale `WORKER_CODE` label in the dataset of these designs; it is not required and is never filled.
 
 ## Remaining provisioning / release blockers
 

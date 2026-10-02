@@ -37,7 +37,7 @@ type GenerationResponse = { jobId?: string; status?: string; designUrl?: string;
 const TEMPLATE_HINT: Record<string, string> = {
   "MB-01A": "Personal: profil lebih human, dengan kata-kata pekerja, usia, asal, spesialisasi.",
   "MB-01B": "Promo: nama, pengalaman, keahlian, ketersediaan, training, dan dokumen lebih menonjol.",
-  "MB-02A": "Flyer katalog Ready To Interview warna biru: foto, nama, posisi, penempatan, dan kode pekerja.",
+  "MB-02A": "Flyer katalog Ready To Interview warna biru: foto, nama, posisi, dan penempatan.",
   "MB-02B": "Flyer katalog Ready To Interview warna pink (biasa dipakai ART Momong/Babysitter).",
 };
 

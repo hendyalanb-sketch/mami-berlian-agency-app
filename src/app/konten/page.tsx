@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 const templateDescription: Record<string, string> = {
   "MB-01A": "Profil personal: quote, usia, asal, spesialisasi.",
   "MB-01B": "Promo: nama, pengalaman, skill, ketersediaan, dokumen.",
-  "MB-02A": "Flyer katalog Ready To Interview (biru): foto, nama, posisi, penempatan, kode.",
+  "MB-02A": "Flyer katalog Ready To Interview (biru): foto, nama, posisi, penempatan.",
   "MB-02B": "Flyer katalog Ready To Interview (pink), untuk ART Momong/Babysitter.",
 };
 

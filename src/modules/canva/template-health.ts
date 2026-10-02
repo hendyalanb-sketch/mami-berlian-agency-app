@@ -12,7 +12,6 @@ export const MB01A_REQUIRED_FIELDS = [
   "WORKER_HEADLINE",
   "WORKER_ORIGIN",
   "WORKER_SPECIALTY",
-  "WORKER_CODE",
   "WORKER_LIVE_IN_STATUS",
   "WORKER_INTRO_QUOTE",
   "WORKER_PHOTO",
@@ -23,7 +22,6 @@ export const MB01A_REQUIRED_FIELDS = [
 export const MB01B_REQUIRED_FIELDS = [
   "WORKER_PHOTO",
   "WORKER_PROFILE_LINE",
-  "WORKER_CODE",
   "WORKER_SKILL_1",
   "WORKER_HEADLINE",
   "WORKER_NAME",
@@ -34,13 +32,12 @@ export const MB01B_REQUIRED_FIELDS = [
   "WORKER_DOCUMENT_STATUS",
 ] as const;
 
-/** Flyer katalog "Ready To Interview" (MB-02A biru, MB-02B pink) — turunan desain SAMPUL PEKERJA, plus kode pekerja. */
+/** Flyer katalog "Ready To Interview" (MB-02A biru, MB-02B pink) — turunan desain SAMPUL PEKERJA. */
 export const MB02_REQUIRED_FIELDS = [
   "WORKER_PHOTO",
   "WORKER_NAME",
   "WORKER_POSITION",
   "WORKER_PLACEMENT",
-  "WORKER_CODE",
 ] as const;
 
 function expectedTypes(fields: readonly string[]) {

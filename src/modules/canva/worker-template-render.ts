@@ -41,7 +41,6 @@ export function fitWords(value: string, max: number) {
  * satu/dua baris tanpa menabrak elemen lain). Ubah bersama desain template + versi template di seed.
  */
 export const CANVA_TEXT_LIMITS = {
-  code: 24,
   "MB-01A": { headline: 21, origin: 26, specialty: 26, liveIn: 26, quote: 72, age: 10, ready: 24 },
   "MB-01B": { profileLine: 30, skill: 32, headline: 48, name: 16, availability: 32, liveIn: 26, training: 24, document: 24 },
   "MB-02": { name: 16, position: 26, placement: 28 },
@@ -87,14 +86,13 @@ export function buildWorkerTemplateAutofill(input: {
   const documentStatus = String(bridge.document_status ?? "").trim();
   const profileLine = [view.category, experienceLabel].filter(Boolean).join(" • ");
 
+  // Kode pekerja (worker_register) sengaja tidak ditampilkan di desain publik; tetap jadi kunci internal.
   const common: Record<string, CanvaAutofillValue> = {
     WORKER_PHOTO: { type: "image", asset_id: assetId },
-    WORKER_CODE: text(view.worker_register, CANVA_TEXT_LIMITS.code),
   };
 
   if (templateCode === "MB-02A" || templateCode === "MB-02B") {
-    // Flyer katalog "Ready To Interview": nama, posisi, dan penempatan dalam huruf kapital seperti desain asli,
-    // plus kode pekerja agar calon majikan bisa menyebut pekerja yang dimaksud saat chat WA.
+    // Flyer katalog "Ready To Interview": nama, posisi, dan penempatan dalam huruf kapital seperti desain asli.
     return {
       ...common,
       WORKER_NAME: text(flyerName(view.name), FLYER_LIMITS.name),
@@ -140,7 +138,6 @@ export const AUTOFILL_FIELD_LABELS: Record<string, string> = {
   WORKER_HEADLINE: "Headline",
   WORKER_ORIGIN: "Asal",
   WORKER_SPECIALTY: "Spesialisasi",
-  WORKER_CODE: "Kode",
   WORKER_LIVE_IN_STATUS: "Status menginap",
   WORKER_INTRO_QUOTE: "Kata-kata pekerja",
   WORKER_AGE: "Usia",

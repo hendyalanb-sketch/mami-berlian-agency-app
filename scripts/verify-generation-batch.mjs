@@ -19,8 +19,8 @@ async function until(test) {
   throw new Error("Browser condition did not complete");
 }
 for (let attempt = 0; attempt < 60; attempt++) {
-  try { if ((await fetch("http://localhost:3000/api/health")).ok) break; } catch {}
-  if (attempt === 59) throw new Error("Dev server did not start");
+  try { if ((await fetch("http://localhost:3000/api/health")).status < 600) break; } catch {}
+  if (attempt === 59) { console.error(readFileSync("/tmp/mba-next-dev.log", "utf8")); throw new Error("Dev server did not start"); }
   await new Promise((resolve) => setTimeout(resolve, 500));
 }
 mkdirSync("artifacts", { recursive: true });

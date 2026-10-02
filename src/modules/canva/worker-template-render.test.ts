@@ -96,3 +96,17 @@ describe("buildWorkerTemplateTextPreview", () => {
     expect(preview.find((item) => item.field === "WORKER_NAME")).toMatchObject({ label: "Nama", text: "NILAM ANGGRAINI" });
   });
 });
+
+
+describe("new registered Canva templates", () => {
+  it("uses the same catalog formatting for a new code without adding a code whitelist", () => {
+    const result = buildWorkerTemplateAutofill({ templateCode: "MB-NEW", contentType: "WORKER_CATALOG_FLYER", requiredFields: ["WORKER_PHOTO", "WORKER_NAME", "WORKER_POSITION", "WORKER_PLACEMENT"], assetId: "SHARED_PHOTO", view, bridge });
+    expect(result).toEqual(buildWorkerTemplateAutofill({ templateCode: "MB-02A", assetId: "SHARED_PHOTO", view, bridge }));
+  });
+  it("renders only configured public fields on a custom or legacy template", () => {
+    const result = buildWorkerTemplateAutofill({ templateCode: "CUSTOM-03", requiredFields: ["WORKER_PHOTO", "WORKER_NAME", "WORKER_SALARY", "CTA_TEXT"], assetId: "SHARED_PHOTO", view, bridge, ctaText: "Hubungi agency" });
+    expect(Object.keys(result)).toEqual(["WORKER_PHOTO", "WORKER_NAME", "WORKER_SALARY", "CTA_TEXT"]);
+    expect(result.CTA_TEXT).toEqual({ type: "text", text: "Hubungi agency" });
+    expect(() => buildWorkerTemplateAutofill({ templateCode: "CUSTOM-03", requiredFields: ["NIK"], assetId: "SHARED_PHOTO", view, bridge })).toThrow("INVALID_TEMPLATE_FIELDS");
+  });
+});

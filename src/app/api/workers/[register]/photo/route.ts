@@ -70,6 +70,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ reg
       : photoType === "FULLBODY"
         ? { fullbody_photo_drive_id: uploaded.id, fullbody_photo_url: uploaded.webViewLink }
         : {};
+    if (photoType === "PROFILE") Object.assign(patch, { approved_at: "", approved_by: "" });
     const merged: BridgeRecord = { ...(before ?? {}), ...patch, worker_register: worker.workerRegister };
     const readiness = readinessFromBridge(merged);
     const contentStatus = contentStatusAfterPhotoUpload({ photoType, currentStatus: before?.content_status, readinessStatus: readiness.status });

@@ -122,6 +122,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ re
       training_status: parsed.data.trainingStatus.trim(),
       document_status: parsed.data.documentStatus.trim(),
       publication_consent: parsed.data.publicationConsent ? "TRUE" : "FALSE",
+      approved_at: "",
+      approved_by: "",
       last_updated_by: session.user.email ?? session.user.id,
       last_updated_at: new Date().toISOString(),
     };

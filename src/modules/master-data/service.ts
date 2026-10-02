@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { experienceLevels, placementOptions, publishChannels, salaryRates, salaryZones, skills, workerCategories } from "@/db/schema";
+import { ctaProfiles, experienceLevels, placementOptions, publishChannels, salaryRates, salaryZones, skills, workerCategories } from "@/db/schema";
 import { formatSalaryRange, resolveSalaryRate } from "@/modules/rules/salary";
 
 export class MasterDataUnavailableError extends Error {
@@ -75,4 +75,10 @@ export async function resolveSalaryForSelection(input: { categoryCode: string; e
     rate,
     salaryDisplay: formatSalaryRange(rate.min, rate.max),
   };
+}
+
+export async function getDefaultCtaText() {
+  if (!db) throw new MasterDataUnavailableError();
+  const [cta] = await db.select().from(ctaProfiles).where(and(eq(ctaProfiles.isActive, true), eq(ctaProfiles.isDefault, true))).limit(1);
+  return [cta?.ctaText, cta?.primaryPhone].filter(Boolean).join(" • ");
 }

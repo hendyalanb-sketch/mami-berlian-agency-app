@@ -1,8 +1,8 @@
-import { inArray } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { canvaTemplates } from "@/db/schema";
 import { getCanvaConnectionStatus } from "@/modules/canva/oauth-token-service";
-import { CANVA_WORKER_TEMPLATE_CODES } from "@/modules/canva/template-health";
+import { supportedTemplateFields } from "@/modules/canva/template-health";
 
 export async function getCanvaRuntimeState(userId?: string | null) {
   const configured = Boolean(
@@ -31,13 +31,13 @@ export async function getCanvaRuntimeState(userId?: string | null) {
     isActive: canvaTemplates.isActive,
     canvaTemplateId: canvaTemplates.canvaTemplateId,
     version: canvaTemplates.version,
-  }).from(canvaTemplates).where(inArray(canvaTemplates.code, [...CANVA_WORKER_TEMPLATE_CODES]));
+    contentType: canvaTemplates.contentType,
+    requiredFields: canvaTemplates.requiredFieldsJson,
+  }).from(canvaTemplates).where(eq(canvaTemplates.isActive, true)).orderBy(asc(canvaTemplates.code));
 
-  const rowByCode = new Map(rows.map((row) => [row.code, row]));
-  const templates = CANVA_WORKER_TEMPLATE_CODES
-    .map((code) => rowByCode.get(code))
-    .filter((row): row is NonNullable<typeof row> => Boolean(row?.isActive && row.canvaTemplateId))
-    .map((row) => ({ code: row.code, name: row.name, version: row.version, designId: row.canvaTemplateId }));
+  const templates = rows
+    .filter((row) => row.canvaTemplateId && supportedTemplateFields(row.requiredFields))
+    .map((row) => ({ code: row.code, name: row.name, version: row.version, designId: row.canvaTemplateId, contentType: row.contentType, requiredFields: row.requiredFields }));
   const first = templates[0];
 
   return {

@@ -1,6 +1,6 @@
 import type { BridgeRecord } from "@/modules/bridge/content-bridge-service";
 import type { CanvaAutofillValue } from "@/modules/canva/rest";
-import type { CanvaWorkerTemplateCode } from "@/modules/canva/template-health";
+import { defaultTemplateFields, getTemplateContract, isWorkerTemplateCode } from "@/modules/canva/template-health";
 
 type PublicWorkerView = {
   worker_register: string;
@@ -50,8 +50,8 @@ export function flyerPlacement(placement: string) {
   return withPrefix.length <= FLYER_LIMITS.placement ? withPrefix : fitWords(value, FLYER_LIMITS.placement);
 }
 
-export function buildWorkerTemplateAutofill(input: {
-  templateCode: CanvaWorkerTemplateCode;
+function buildBuiltinWorkerTemplateAutofill(input: {
+  templateCode: string;
   assetId: string;
   view: PublicWorkerView;
   bridge: BridgeRecord;
@@ -111,9 +111,45 @@ export function buildWorkerTemplateAutofill(input: {
   };
 }
 
+export function buildWorkerTemplateAutofill(input: {
+  templateCode: string;
+  contentType?: string;
+  requiredFields?: readonly string[];
+  assetId: string;
+  view: PublicWorkerView;
+  bridge: BridgeRecord;
+  experienceLabel?: string;
+  ctaText?: string;
+}): Record<string, CanvaAutofillValue> {
+  const fields = input.requiredFields ?? (isWorkerTemplateCode(input.templateCode) ? getTemplateContract(input.templateCode).requiredFields : defaultTemplateFields(input.contentType ?? "PEKERJA_READY"));
+  const personal = input.contentType === "WORKER_PROFILE_PERSONAL" || input.templateCode === "MB-01A";
+  const flyer = input.contentType === "WORKER_CATALOG_FLYER" || ["MB-02A", "MB-02B"].includes(input.templateCode);
+  const all = {
+    ...buildBuiltinWorkerTemplateAutofill({ ...input, templateCode: "MB-01A" }),
+    ...buildBuiltinWorkerTemplateAutofill({ ...input, templateCode: "MB-01B" }),
+    ...(personal ? buildBuiltinWorkerTemplateAutofill({ ...input, templateCode: "MB-01A" }) : {}),
+    ...(flyer ? buildBuiltinWorkerTemplateAutofill({ ...input, templateCode: "MB-02A" }) : {}),
+    WORKER_POSITION: text(input.bridge.worker_specialty || input.view.category, 54),
+    WORKER_CATEGORY: text(input.view.category, 60),
+    WORKER_SKILLS: text(input.view.skills.join(" • "), 180),
+    WORKER_SALARY: text(input.view.salary, 60),
+    CTA_TEXT: text(input.ctaText, 120),
+    ...(!flyer ? { WORKER_PLACEMENT: text(input.view.placement, 60) } : buildBuiltinWorkerTemplateAutofill({ ...input, templateCode: "MB-02A" })),
+  };
+  return Object.fromEntries(fields.map((field) => {
+    const value = (all as Record<string, CanvaAutofillValue>)[field];
+    if (!value) throw new Error("INVALID_TEMPLATE_FIELDS");
+    return [field, value];
+  }));
+}
+
 /** Label field Autofill untuk pratinjau teks di layar staf. */
 export const AUTOFILL_FIELD_LABELS: Record<string, string> = {
   WORKER_NAME: "Nama",
+  WORKER_CATEGORY: "Kategori",
+  WORKER_SKILLS: "Keahlian",
+  WORKER_SALARY: "Gaji",
+  CTA_TEXT: "Kontak agency",
   WORKER_POSITION: "Posisi",
   WORKER_PLACEMENT: "Penempatan",
   WORKER_HEADLINE: "Headline",

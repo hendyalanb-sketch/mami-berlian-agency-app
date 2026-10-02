@@ -54,7 +54,7 @@ const labelNames: Record<DisplayKey, string> = {
   "display.footer_text": "Footer publik",
 };
 
-const emptyTemplate = { code: "", name: "", canvaTemplateId: "", version: "v1", contentType: "PEKERJA_READY" };
+const emptyTemplate = { code: "", name: "", canvaTemplateId: "", version: "v1", contentType: "PEKERJA_READY", requiredFields: "" };
 const emptyChannel = { code: "", name: "" };
 const emptyCta = {
   id: "",
@@ -195,9 +195,13 @@ export function ContentMasterManager({ enabled }: { enabled: boolean }) {
               />
             </Field>
           </div>
+          <Field label="Kolom isian Canva (pisahkan dengan koma)">
+            <Input value={template.requiredFields} onChange={(event) => setTemplate({ ...template, requiredFields: event.target.value.toUpperCase() })} placeholder="WORKER_PHOTO, WORKER_NAME, WORKER_POSITION, WORKER_PLACEMENT" />
+          </Field>
+          <p className="text-xs text-slate-500">Kosongkan untuk memakai kolom standar jenis konten. Template baru otomatis tersedia untuk Buat Semua setelah health check berhasil.</p>
           <Button
             disabled={busy || !template.code || !template.name || !template.canvaTemplateId || !template.version || !template.contentType}
-            onClick={() => mutate("POST", { resource: "template", ...template })}
+            onClick={() => mutate("POST", { resource: "template", ...template, ...(template.requiredFields.trim() ? { requiredFieldsJson: template.requiredFields.split(",").map((field) => field.trim()).filter(Boolean) } : {}) })}
             className="gap-2"
           >
             <ShieldCheck size={16} aria-hidden />
@@ -228,6 +232,7 @@ export function ContentMasterManager({ enabled }: { enabled: boolean }) {
                         canvaTemplateId: item.canvaTemplateId,
                         version: item.version,
                         contentType: item.contentType,
+                        requiredFields: item.requiredFieldsJson.join(", "),
                       })
                     }
                   >

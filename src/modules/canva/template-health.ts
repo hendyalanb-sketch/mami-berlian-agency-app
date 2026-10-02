@@ -106,3 +106,28 @@ export function evaluateTemplateHealth(availableFields: string[]) {
 export function evaluateTemplateDataset(dataset: Record<string, { type: string }>) {
   return evaluateTemplateDatasetForCode("MB-01A", dataset);
 }
+
+
+export const LEGACY_REQUIRED_FIELDS = ["WORKER_PHOTO", "WORKER_NAME", "WORKER_AGE", "WORKER_ORIGIN", "WORKER_CATEGORY", "WORKER_SKILLS", "WORKER_PLACEMENT", "WORKER_SALARY", "CTA_TEXT"] as const;
+export const SUPPORTED_WORKER_FIELDS: string[] = [...new Set([...MB01A_REQUIRED_FIELDS, ...MB01B_REQUIRED_FIELDS, ...MB02_REQUIRED_FIELDS, ...LEGACY_REQUIRED_FIELDS])];
+
+export function defaultTemplateFields(contentType: string): readonly string[] {
+  if (contentType === "WORKER_PROFILE_PERSONAL") return MB01A_REQUIRED_FIELDS;
+  if (contentType === "WORKER_PROFILE_PROMO") return MB01B_REQUIRED_FIELDS;
+  if (contentType === "WORKER_CATALOG_FLYER") return MB02_REQUIRED_FIELDS;
+  if (contentType === "PEKERJA_READY") return LEGACY_REQUIRED_FIELDS;
+  return [];
+}
+
+export function supportedTemplateFields(fields: readonly string[]) {
+  return fields.length > 0 && fields.every((field) => SUPPORTED_WORKER_FIELDS.includes(field));
+}
+
+/** Master data is authoritative for both new and existing template codes. */
+export function evaluateWorkerTemplateDataset(fields: readonly string[], dataset: Record<string, { type: string }>) {
+  const unsupported = fields.filter((field) => !SUPPORTED_WORKER_FIELDS.includes(field));
+  const missing = fields.filter((field) => !dataset[field]);
+  const wrongType = fields.filter((field) => dataset[field] && dataset[field].type !== (field === "WORKER_PHOTO" ? "image" : "text"));
+  const unmapped = Object.keys(dataset).filter((field) => !fields.includes(field));
+  return { valid: fields.length > 0 && !unsupported.length && !missing.length && !wrongType.length && !unmapped.length, missing: [...missing, ...unsupported, ...unmapped.map((field) => `${field}:UNMAPPED`), ...(fields.length ? [] : ["AUTOFILL_FIELDS_NOT_CONFIGURED"])], wrongType };
+}

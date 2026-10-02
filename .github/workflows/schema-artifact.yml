@@ -2,7 +2,7 @@ name: Schema Artifact
 
 on:
   push:
-    branches: [content-ops-v3]
+    branches: [content-ops-v3, feat/generate-all-templates]
   pull_request:
     branches: [main]
 

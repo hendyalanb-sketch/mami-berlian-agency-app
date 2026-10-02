@@ -30,7 +30,7 @@ export const ERROR_MESSAGES: Record<string, ErrorInfo> = {
   PHOTO_NOT_CONFIGURED: { title: "Folder foto Google Drive belum dikonfigurasi.", action: ADMIN, ...INTEGRASI },
   EXPORT_FOLDER_NOT_CONFIGURED: { title: "Folder arsip export di Google Drive belum disiapkan.", action: "Admin perlu menjalankan health check Google dan menyiapkan folder export.", ...INTEGRASI },
   CANVA_OAUTH_NOT_CONFIGURED: { title: "Kredensial Canva belum dikonfigurasi.", action: ADMIN, ...INTEGRASI },
-  WORKER_TEMPLATES_NOT_CONFIGURED: { title: "Template Canva pekerja belum tersedia di Master Data.", action: "Admin perlu menambahkan template MB-01A/MB-01B lalu menjalankan health check.", ...MASTER },
+  WORKER_TEMPLATES_NOT_CONFIGURED: { title: "Template Canva pekerja belum tersedia di Master Data.", action: "Admin perlu mendaftarkan template dan kolom isian di Master Data, lalu menjalankan health check.", ...MASTER },
 
   // Koneksi akun
   GOOGLE_NOT_CONNECTED: { title: "Akun Google Anda belum terhubung ke aplikasi.", action: "Logout lalu login kembali dengan Google, setujui akses Sheets & Drive.", href: "/lainnya", hrefLabel: "Logout" },
@@ -66,6 +66,9 @@ export const ERROR_MESSAGES: Record<string, ErrorInfo> = {
   INVALID_MASTER_INPUT: { title: "Isian Master Data tidak valid.", action: "Kode wajib huruf besar/angka/garis bawah, dan nama wajib diisi." },
   INVALID_MAPPING_INPUT: { title: "Isian mapping tidak valid.", action: "Isi nilai sumber dan pilih kode target yang aktif." },
   INVALID_RATE_RANGE: { title: "Rentang gaji tidak valid.", action: "Pastikan gaji minimum tidak lebih besar dari gaji maksimum." },
+  INVALID_TEMPLATE_FIELDS: { title: "Kolom template belum dapat diisi oleh aplikasi.", action: "Admin perlu mencocokkan kolom isian di Master Data dengan label Canva, lalu menjalankan health check.", ...MASTER },
+  GENERATION_ALREADY_RUNNING: { title: "Template ini sedang dibuat oleh akun lain.", action: "Tunggu proses akun tersebut selesai, lalu tekan Buat Semua lagi." },
+  GENERATION_INTERRUPTED: { title: "Persiapan desain terputus sebelum dikirim ke Canva.", action: "Tekan Coba Lagi yang Gagal. Hasil template lain tetap tersimpan." },
   INVALID_TEMPLATE_INPUT: { title: "Isian template tidak valid.", action: "Periksa kode, design ID, dan versi template." },
   INVALID_CHANNEL_INPUT: { title: "Isian channel tidak valid.", action: "Periksa kode dan nama channel." },
   INVALID_CTA_INPUT: { title: "Isian CTA tidak valid.", action: "Periksa nama, nomor, dan teks CTA." },

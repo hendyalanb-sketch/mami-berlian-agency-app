@@ -44,6 +44,7 @@ const templateSchema = z.object({
   canvaTemplateId: z.string().min(1).max(100),
   version: z.string().min(1).max(30),
   contentType: z.string().min(1).max(60),
+  requiredFieldsJson: z.array(z.string().min(1).max(80)).min(1).max(40).optional(),
 });
 const ctaSchema = z.object({
   resource: z.literal("cta"),

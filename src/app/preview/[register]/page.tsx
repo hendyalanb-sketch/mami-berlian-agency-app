@@ -12,15 +12,17 @@ import { canEditWorkers, canGenerateContent, isAdmin } from "@/lib/permissions";
 import { CONTENT_STATUS, statusInfo } from "@/lib/status-labels";
 import { ContentBridgeService, type BridgeRecord } from "@/modules/bridge/content-bridge-service";
 import { getCanvaRuntimeState } from "@/modules/canva/runtime-state";
-import { isWorkerTemplateCode, recommendedWorkerTemplateCode } from "@/modules/canva/template-health";
+import { recommendedWorkerTemplateCode } from "@/modules/canva/template-health";
 import { buildWorkerTemplateTextPreview, type RenderTextPreview } from "@/modules/canva/worker-template-render";
 import { readinessFromBridge } from "@/modules/enrichment/serialization";
 import { getGoogleAccessToken, GoogleConnectionError } from "@/modules/google/oauth-token-service";
 import { getRuntimeCapabilities } from "@/modules/integrations/capabilities";
-import { getActivePublishChannels, getWorkerMasterOptions } from "@/modules/master-data/service";
+import { getDefaultCtaText, getActivePublishChannels, getWorkerMasterOptions } from "@/modules/master-data/service";
 import { getDisplayLabels, getGoogleStorageSettings } from "@/modules/settings/service";
 import { buildPublicWorkerView } from "@/modules/workers/public-view";
 import { WorkerSourceService } from "@/modules/workers/source-service";
+import { listWorkerGenerationJobs } from "@/modules/generation/job-service";
+import { generationResult } from "@/modules/generation/results";
 import { buildWorkflowSteps } from "@/modules/workflow/steps";
 
 export const metadata = { title: "Preview Publik" };
@@ -31,6 +33,7 @@ type Loaded = {
   readiness: ReturnType<typeof readinessFromBridge>;
   bridge: BridgeRecord | null;
   experienceLabel: string;
+  ctaText: string;
 };
 
 /** Memuat data preview; error dikembalikan sebagai kode agar bisa diterjemahkan ke langkah perbaikan. */
@@ -44,9 +47,9 @@ async function loadPreview(register: string, userId: string): Promise<{ data: Lo
     stage = "bridge";
     const bridge = await new ContentBridgeService({ spreadsheetId: process.env.GOOGLE_BRIDGE_SPREADSHEET_ID!, accessToken }).get(worker.workerRegister);
     stage = "master";
-    const master = await getWorkerMasterOptions();
+    const [master, ctaText] = await Promise.all([getWorkerMasterOptions(), getDefaultCtaText()]);
     const experienceLabel = master.experiences.find((item) => item.code === String(bridge?.experience_level ?? ""))?.name ?? "";
-    return { data: { view: buildPublicWorkerView(worker, bridge, master), readiness: readinessFromBridge(bridge), bridge, experienceLabel } };
+    return { data: { view: buildPublicWorkerView(worker, bridge, master), readiness: readinessFromBridge(bridge), bridge, experienceLabel, ctaText } };
   } catch (error) {
     if (error instanceof GoogleConnectionError) return { errorCode: error.code };
     return { errorCode: stage === "register" ? "REGISTER_READ_FAILED" : stage === "bridge" ? "ENRICHMENT_READ_FAILED" : "MASTER_READ_FAILED" };
@@ -75,11 +78,14 @@ export default async function PreviewPage({ params }: { params: Promise<{ regist
   const view = data?.view ?? null;
   // Teks akhir per template (sama dengan yang dikirim route generate) untuk dipratinjau sebelum Generate.
   const renderPreviews: Record<string, RenderTextPreview> = data && bridge
-    ? Object.fromEntries(canva.templates.filter((template) => isWorkerTemplateCode(template.code)).map((template) => [
+    ? Object.fromEntries(canva.templates.map((template) => [
       template.code,
-      buildWorkerTemplateTextPreview({ templateCode: template.code as Parameters<typeof buildWorkerTemplateTextPreview>[0]["templateCode"], view: data.view, bridge, experienceLabel: data.experienceLabel }),
+      buildWorkerTemplateTextPreview({ templateCode: template.code, contentType: template.contentType, requiredFields: template.requiredFields, ctaText: data.ctaText, view: data.view, bridge, experienceLabel: data.experienceLabel }),
     ]))
     : {};
+  const initialResults = data && session?.user.id && capabilities.database.configured
+    ? (await listWorkerGenerationJobs(data.view.worker_register, session.user.id)).map(generationResult)
+    : [];
   const steps = data ? buildWorkflowSteps({ checks: data.readiness.checks, contentStatus, approved }) : null;
 
   return <div className="mx-auto max-w-5xl space-y-5">
@@ -127,6 +133,8 @@ export default async function PreviewPage({ params }: { params: Promise<{ regist
         canPublish={canEditWorkers(session.user.role)}
         generationConfigured={canva.ready}
         exportConfigured={Boolean(storage.exportFolderId)}
+        initialResults={initialResults}
+        initialTemplateCode={String(bridge?.canva_template_key ?? "")}
         initialExportUrl={bridge?.export_drive_url ? String(bridge.export_drive_url) : null}
         initialDesignUrl={bridge?.canva_design_url ? String(bridge.canva_design_url) : null}
         publishedChannel={bridge?.published_channel ? String(bridge.published_channel) : null}

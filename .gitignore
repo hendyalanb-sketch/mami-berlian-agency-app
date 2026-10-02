@@ -13,3 +13,6 @@ next-env.d.ts
 
 # Legacy PHP API local config (do not commit secrets)
 api/config.local.php
+
+# Runtime MediaPipe disalin dari node_modules (scripts/copy-mediapipe-wasm.mjs)
+/public/vendor/mediapipe/

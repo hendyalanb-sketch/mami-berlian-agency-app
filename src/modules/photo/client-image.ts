@@ -1,6 +1,6 @@
-export async function prepareImage(file: File, options?: { maxDimension?: number; quality?: number; rotation?: number }) {
+/** Menggambar foto ke canvas: diperkecil ke `maxDimension` dan diputar sesuai pilihan user. */
+export async function renderToCanvas(file: Blob, options?: { maxDimension?: number; rotation?: number }) {
   const maxDimension = options?.maxDimension ?? 1600;
-  const quality = options?.quality ?? 0.84;
   const rotation = (((options?.rotation ?? 0) % 360) + 360) % 360;
   const image = await createImageBitmap(file);
   const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
@@ -16,8 +16,17 @@ export async function prepareImage(file: File, options?: { maxDimension?: number
   context.rotate((rotation * Math.PI) / 180);
   context.drawImage(image, -sourceWidth / 2, -sourceHeight / 2, sourceWidth, sourceHeight);
   image.close();
-  const blob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((result) => (result ? resolve(result) : reject(new Error("Gagal menyiapkan foto"))), "image/jpeg", quality);
+  return canvas;
+}
+
+export function canvasToBlob(canvas: HTMLCanvasElement, mimeType: "image/jpeg" | "image/png", quality?: number) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((result) => (result ? resolve(result) : reject(new Error("Gagal menyiapkan foto"))), mimeType, quality);
   });
+}
+
+export async function prepareImage(file: File, options?: { maxDimension?: number; quality?: number; rotation?: number }) {
+  const canvas = await renderToCanvas(file, options);
+  const blob = await canvasToBlob(canvas, "image/jpeg", options?.quality ?? 0.84);
   return { blob, width: canvas.width, height: canvas.height, mimeType: "image/jpeg" as const };
 }

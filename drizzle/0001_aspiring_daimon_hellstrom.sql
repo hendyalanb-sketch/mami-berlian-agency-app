@@ -1,0 +1,1 @@
+ALTER TABLE "generation_jobs" ADD COLUMN "result_json" jsonb DEFAULT '{}'::jsonb NOT NULL;

@@ -8,6 +8,13 @@
       "when": 1790828789421,
       "tag": "0000_mature_moira_mactaggert",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790911163371,
+      "tag": "0001_aspiring_daimon_hellstrom",
+      "breakpoints": true
     }
   ]
 }

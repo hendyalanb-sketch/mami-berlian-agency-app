@@ -1,0 +1,11 @@
+var R=require("../../../../../chunks/[turbopack]_runtime.js")("server/app/api/integrations/google/health/route.js")
+R.c("server/chunks/[root-of-the-server]__15u8t56._.js")
+R.c("server/chunks/node_modules_@neondatabase_serverless_index_mjs_0dg74ey._.js")
+R.c("server/chunks/_0z9m-sj._.js")
+R.c("server/chunks/_1rtf4l9._.js")
+R.c("server/chunks/[root-of-the-server]__00_hq9v._.js")
+R.c("server/chunks/node_modules_zod_v4_classic_external_1-pw2v2.js")
+R.c("server/chunks/node_modules_next_1zdbrne._.js")
+R.c("server/chunks/_next-internal_server_app_api_integrations_google_health_route_actions_0h-nv0t.js")
+R.m(69765)
+module.exports=R.m(69765).exports

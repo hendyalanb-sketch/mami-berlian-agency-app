@@ -1,0 +1,3 @@
+module.exports=[80392,a=>{"use strict";var b=a.i(7997),c=a.i(94886);a.s(["default",0,function(){return(0,b.jsx)(c.PageSkeleton,{})}])},89210,function(a){a.n(a.i(80392))},94886,a=>{"use strict";var b=a.i(7997);a.s(["PageSkeleton",0,function({cards:a=3}){return(0,b.jsxs)("div",{className:"space-y-5",role:"status","aria-label":"Memuat halaman",children:[(0,b.jsxs)("div",{className:"space-y-2",children:[(0,b.jsx)("div",{className:"h-7 w-48 animate-pulse rounded-lg bg-slate-200"}),(0,b.jsx)("div",{className:"h-4 w-72 max-w-full animate-pulse rounded bg-slate-100"})]}),Array.from({length:a},(a,c)=>(0,b.jsx)("div",{className:"h-32 animate-pulse rounded-2xl bg-white shadow-sm ring-1 ring-slate-100"},c))]})}])}];
+
+//# sourceMappingURL=src_1ulzlkf._.js.map

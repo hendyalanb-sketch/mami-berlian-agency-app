@@ -1,0 +1,281 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "app",
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/vendor/mediapipe/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ],
+      "regex": "^/vendor/mediapipe(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    }
+  ],
+  "onMatchHeaders": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/api/auth/[...nextauth]",
+      "regex": "^/api/auth/(.+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPnextauth": "nxtPnextauth"
+      },
+      "namedRegex": "^/api/auth/(?<nxtPnextauth>.+?)(?:/)?$"
+    },
+    {
+      "page": "/api/generation/[jobId]",
+      "regex": "^/api/generation/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPjobId": "nxtPjobId"
+      },
+      "namedRegex": "^/api/generation/(?<nxtPjobId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/workers/[register]/approve",
+      "regex": "^/api/workers/([^/]+?)/approve(?:/)?$",
+      "routeKeys": {
+        "nxtPregister": "nxtPregister"
+      },
+      "namedRegex": "^/api/workers/(?<nxtPregister>[^/]+?)/approve(?:/)?$"
+    },
+    {
+      "page": "/api/workers/[register]/enrichment",
+      "regex": "^/api/workers/([^/]+?)/enrichment(?:/)?$",
+      "routeKeys": {
+        "nxtPregister": "nxtPregister"
+      },
+      "namedRegex": "^/api/workers/(?<nxtPregister>[^/]+?)/enrichment(?:/)?$"
+    },
+    {
+      "page": "/api/workers/[register]/export",
+      "regex": "^/api/workers/([^/]+?)/export(?:/)?$",
+      "routeKeys": {
+        "nxtPregister": "nxtPregister"
+      },
+      "namedRegex": "^/api/workers/(?<nxtPregister>[^/]+?)/export(?:/)?$"
+    },
+    {
+      "page": "/api/workers/[register]/generate",
+      "regex": "^/api/workers/([^/]+?)/generate(?:/)?$",
+      "routeKeys": {
+        "nxtPregister": "nxtPregister"
+      },
+      "namedRegex": "^/api/workers/(?<nxtPregister>[^/]+?)/generate(?:/)?$"
+    },
+    {
+      "page": "/api/workers/[register]/photo",
+      "regex": "^/api/workers/([^/]+?)/photo(?:/)?$",
+      "routeKeys": {
+        "nxtPregister": "nxtPregister"
+      },
+      "namedRegex": "^/api/workers/(?<nxtPregister>[^/]+?)/photo(?:/)?$"
+    },
+    {
+      "page": "/api/workers/[register]/publish",
+      "regex": "^/api/workers/([^/]+?)/publish(?:/)?$",
+      "routeKeys": {
+        "nxtPregister": "nxtPregister"
+      },
+      "namedRegex": "^/api/workers/(?<nxtPregister>[^/]+?)/publish(?:/)?$"
+    },
+    {
+      "page": "/pekerja/[register]",
+      "regex": "^/pekerja/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPregister": "nxtPregister"
+      },
+      "namedRegex": "^/pekerja/(?<nxtPregister>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/preview/[register]",
+      "regex": "^/preview/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPregister": "nxtPregister"
+      },
+      "namedRegex": "^/preview/(?<nxtPregister>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/api/admin/users",
+      "regex": "^/api/admin/users(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/users(?:/)?$"
+    },
+    {
+      "page": "/api/capabilities",
+      "regex": "^/api/capabilities(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/capabilities(?:/)?$"
+    },
+    {
+      "page": "/api/health",
+      "regex": "^/api/health(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/health(?:/)?$"
+    },
+    {
+      "page": "/api/integrations/canva/callback",
+      "regex": "^/api/integrations/canva/callback(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/integrations/canva/callback(?:/)?$"
+    },
+    {
+      "page": "/api/integrations/canva/connect",
+      "regex": "^/api/integrations/canva/connect(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/integrations/canva/connect(?:/)?$"
+    },
+    {
+      "page": "/api/integrations/canva/health",
+      "regex": "^/api/integrations/canva/health(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/integrations/canva/health(?:/)?$"
+    },
+    {
+      "page": "/api/integrations/google/health",
+      "regex": "^/api/integrations/google/health(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/integrations/google/health(?:/)?$"
+    },
+    {
+      "page": "/api/integrations/google/provision",
+      "regex": "^/api/integrations/google/provision(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/integrations/google/provision(?:/)?$"
+    },
+    {
+      "page": "/api/master",
+      "regex": "^/api/master(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/master(?:/)?$"
+    },
+    {
+      "page": "/api/workers/search",
+      "regex": "^/api/workers/search(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/workers/search(?:/)?$"
+    },
+    {
+      "page": "/audit",
+      "regex": "^/audit(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/audit(?:/)?$"
+    },
+    {
+      "page": "/canva-connected",
+      "regex": "^/canva\\-connected(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/canva\\-connected(?:/)?$"
+    },
+    {
+      "page": "/dev/ui",
+      "regex": "^/dev/ui(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dev/ui(?:/)?$"
+    },
+    {
+      "page": "/dev/ui/batch",
+      "regex": "^/dev/ui/batch(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dev/ui/batch(?:/)?$"
+    },
+    {
+      "page": "/integrasi",
+      "regex": "^/integrasi(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/integrasi(?:/)?$"
+    },
+    {
+      "page": "/konten",
+      "regex": "^/konten(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/konten(?:/)?$"
+    },
+    {
+      "page": "/lainnya",
+      "regex": "^/lainnya(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/lainnya(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/master",
+      "regex": "^/master(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/master(?:/)?$"
+    },
+    {
+      "page": "/pekerja",
+      "regex": "^/pekerja(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/pekerja(?:/)?$"
+    },
+    {
+      "page": "/pengaturan",
+      "regex": "^/pengaturan(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/pengaturan(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}

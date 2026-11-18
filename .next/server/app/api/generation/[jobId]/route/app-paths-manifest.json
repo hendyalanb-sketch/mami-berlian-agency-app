@@ -1,0 +1,3 @@
+{
+  "/api/generation/[jobId]/route": "app/api/generation/[jobId]/route.js"
+}

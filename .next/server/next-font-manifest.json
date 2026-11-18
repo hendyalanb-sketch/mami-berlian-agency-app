@@ -1,0 +1,52 @@
+{
+  "app": {
+    "[project]/src/app/_not-found/page": [
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2"
+    ],
+    "[project]/src/app/audit/page": [
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2"
+    ],
+    "[project]/src/app/canva-connected/page": [
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2"
+    ],
+    "[project]/src/app/dev/ui/batch/page": [
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2"
+    ],
+    "[project]/src/app/dev/ui/page": [
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2"
+    ],
+    "[project]/src/app/integrasi/page": [
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2"
+    ],
+    "[project]/src/app/konten/page": [
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2"
+    ],
+    "[project]/src/app/lainnya/page": [
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2"
+    ],
+    "[project]/src/app/login/page": [
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2"
+    ],
+    "[project]/src/app/master/page": [
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2"
+    ],
+    "[project]/src/app/page": [
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2"
+    ],
+    "[project]/src/app/pekerja/[register]/page": [
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2"
+    ],
+    "[project]/src/app/pekerja/page": [
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2"
+    ],
+    "[project]/src/app/pengaturan/page": [
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2"
+    ],
+    "[project]/src/app/preview/[register]/page": [
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}

@@ -1,0 +1,3 @@
+{
+  "/api/workers/[register]/generate/route": "app/api/workers/[register]/generate/route.js"
+}

@@ -1,0 +1,10 @@
+var R=require("../../../../../chunks/[turbopack]_runtime.js")("server/app/api/integrations/canva/health/route.js")
+R.c("server/chunks/[root-of-the-server]__0xp5cy5._.js")
+R.c("server/chunks/node_modules_next_1zdbrne._.js")
+R.c("server/chunks/_1ps4mig._.js")
+R.c("server/chunks/_1faemsn._.js")
+R.c("server/chunks/[root-of-the-server]__00_hq9v._.js")
+R.c("server/chunks/node_modules_@neondatabase_serverless_index_mjs_0dg74ey._.js")
+R.c("server/chunks/_next-internal_server_app_api_integrations_canva_health_route_actions_07buosa.js")
+R.m(4322)
+module.exports=R.m(4322).exports

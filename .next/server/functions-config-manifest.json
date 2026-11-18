@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "functions": {
+    "/_middleware": {
+      "runtime": "nodejs",
+      "matchers": [
+        {
+          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!api\\/auth|api\\/health|api\\/capabilities|_next\\/static|_next\\/image|favicon.ico|icon.svg|manifest.webmanifest|sw.js|vendor\\/|login|canva-connected).*))(\\.json|\\.rsc|\\.segments\\/.+\\.segment\\.rsc)?[\\/#\\?]?$",
+          "originalSource": "/((?!api/auth|api/health|api/capabilities|_next/static|_next/image|favicon.ico|icon.svg|manifest.webmanifest|sw.js|vendor/|login|canva-connected).*)"
+        }
+      ]
+    },
+    "/api/admin/users": {},
+    "/api/auth/[...nextauth]": {},
+    "/api/capabilities": {},
+    "/api/generation/[jobId]": {},
+    "/api/health": {},
+    "/api/integrations/canva/callback": {},
+    "/api/integrations/canva/connect": {},
+    "/api/integrations/canva/health": {},
+    "/api/integrations/google/health": {},
+    "/api/integrations/google/provision": {},
+    "/api/master": {},
+    "/api/workers/[register]/approve": {},
+    "/api/workers/[register]/enrichment": {},
+    "/api/workers/[register]/export": {},
+    "/api/workers/[register]/generate": {},
+    "/api/workers/[register]/photo": {},
+    "/api/workers/[register]/publish": {},
+    "/api/workers/search": {}
+  }
+}
